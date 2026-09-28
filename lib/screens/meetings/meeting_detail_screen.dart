@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/app_localizations.dart';
@@ -25,6 +28,8 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
   bool _isEditing = false;
   bool _isAdmin = false;
   bool _isCreator = false;
+  bool _isCallingBot = false;
+  bool _isFetchingSummary = false;
 
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -50,6 +55,105 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
     _aiSummaryController.dispose();
     _durationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _callBot() async {
+    final meeting = _meeting;
+    final meetingUrl = meeting?['meeting_url']?.toString() ?? '';
+    if (meeting == null || meetingUrl.isEmpty || _isCallingBot) return;
+
+    setState(() => _isCallingBot = true);
+    try {
+      final result = await _supabaseService.startBot(
+        meetingId: widget.meetingId,
+        meetingUrl: meetingUrl,
+      );
+      if (!mounted) return;
+      if (result['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bot called'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        await _loadMeetingDetails();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['error']?.toString() ?? 'Failed to call bot'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to call bot: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isCallingBot = false);
+    }
+  }
+
+  Future<void> _fetchSummary() async {
+    final meeting = _meeting;
+    final meetingUrl = meeting?['meeting_url']?.toString() ?? '';
+    if (meeting == null || meetingUrl.isEmpty || _isFetchingSummary) return;
+
+    setState(() => _isFetchingSummary = true);
+    try {
+      final result = await _supabaseService.fetchAndProcessTranscript(
+        meetingId: widget.meetingId,
+        meetingUrl: meetingUrl,
+      );
+      if (!mounted) return;
+      if (result['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Summary ready'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result['error']?.toString() ?? 'Failed to fetch summary',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to fetch summary: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      Map<String, dynamic>? updatedMeeting;
+      try {
+        updatedMeeting =
+            await _supabaseService.getMeetingDetails(widget.meetingId);
+      } catch (e) {
+        debugPrint('Error refreshing meeting after summary: $e');
+      }
+      if (mounted) {
+        setState(() {
+          _isFetchingSummary = false;
+          if (updatedMeeting != null) {
+            _meeting = updatedMeeting;
+            _aiSummaryController.text =
+                updatedMeeting['ai_summary']?.toString() ?? '';
+          }
+        });
+      }
+    }
   }
 
   Future<void> _loadMeetingDetails() async {
@@ -742,7 +846,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                 // Show transcription status for Google Meet URLs
                 if (_meeting!['meeting_url']
                     .toString()
-                    .contains('meet.google.com'))
+                    .contains('meet.google.com')) ...[
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Row(
@@ -764,13 +868,58 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  if (_meeting!['bot_started_at'] == null)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _isCallingBot ? null : _callBot,
+                        icon: _isCallingBot
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.smart_toy_outlined),
+                        label: Text(
+                          _isCallingBot ? 'Calling bot…' : 'Call Bot',
+                        ),
+                      ),
+                    ),
+                  if (_meeting!['bot_started_at'] != null || !isUpcoming)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _isFetchingSummary ? null : _fetchSummary,
+                          icon: _isFetchingSummary
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.summarize_outlined),
+                          label: Text(
+                            _isFetchingSummary
+                                ? 'Fetching summary…'
+                                : 'Fetch Summary',
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ],
             ),
           ),
 
         const SizedBox(height: 16),
 
-        // Manage from AI summary (action items and follow-ups). Hide raw transcription/summary here.
+        _buildSummaryView(),
+
+        // Manage from AI summary (action items and follow-ups).
         if (!isUpcoming) _buildManageSections(),
 
         const SizedBox(height: 24),
@@ -974,10 +1123,181 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
     );
   }
 
+  Map<String, dynamic>? _summaryJson() {
+    final raw = _meeting?['meeting_summary_json'];
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+    if (raw is String && raw.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  Widget _buildSummaryView() {
+    final summary = _summaryJson();
+    final aiSummary = _meeting?['ai_summary']?.toString() ?? '';
+
+    if (summary != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _summarySection(
+            title: 'Summary',
+            child: Text(
+              summary['overall_summary']?.toString() ?? '',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                height: 1.4,
+              ),
+            ),
+          ),
+          _summarySection(
+            title: 'Highlights',
+            child: _bulletList(summary['meeting_highlights']),
+          ),
+          _summarySection(
+            title: 'Key Points',
+            child: _bulletList(summary['key_discussion_points']),
+          ),
+          _summarySection(
+            title: 'Action Items',
+            child: _actionItemList(summary['action_items']),
+          ),
+        ],
+      );
+    }
+
+    if (aiSummary.trim().isNotEmpty) {
+      return _summarySection(
+        title: 'Summary',
+        child: MarkdownBody(
+          data: aiSummary,
+          styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+            p: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          ),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _summarySection({required String title, required Widget child}) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _bulletList(dynamic items) {
+    final list = items is List ? items : const [];
+    if (list.isEmpty) {
+      return Text(
+        'None',
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: list.map<Widget>((item) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('• ',
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface)),
+              Expanded(
+                child: Text(
+                  item?.toString() ?? '',
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _actionItemList(dynamic items) {
+    final list = items is List ? items : const [];
+    if (list.isEmpty) {
+      return Text(
+        'None',
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+      );
+    }
+    return Column(
+      children: list.map<Widget>((item) {
+        final map = item is Map ? Map<String, dynamic>.from(item) : null;
+        final title = map?['item']?.toString() ?? item?.toString() ?? '';
+        final owner = map?['owner']?.toString();
+        final deadline = map?['deadline']?.toString();
+        final subtitle = [
+          if (owner != null && owner.isNotEmpty) 'Owner: $owner',
+          if (deadline != null && deadline.isNotEmpty) 'Deadline: $deadline',
+        ].join('  •  ');
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.check_box_outline_blank,
+                  size: 18, color: Theme.of(context).colorScheme.onSurface),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w600)),
+                    if (subtitle.isNotEmpty)
+                      Text(subtitle,
+                          style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildManageSections() {
     final l10n = AppLocalizations.of(context);
-    final summary = _meeting?['meeting_summary_json'];
-    if (summary == null || summary is! Map || summary.isEmpty) {
+    final summary = _summaryJson();
+    if (summary == null || summary.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(

@@ -2518,6 +2518,126 @@ class SupabaseService {
     }
   }
 
+  Future<Map<String, dynamic>> _invokeFunction(
+    String functionName, {
+    required Map<String, dynamic> body,
+  }) async {
+    try {
+      if (!_isInitialized) {
+        return {'success': false, 'error': 'Supabase is not initialized'};
+      }
+
+      final response = await _client.functions.invoke(
+        functionName,
+        body: body,
+      );
+      final data = response.data;
+      final payload = data is Map ? Map<String, dynamic>.from(data) : null;
+      final ok = response.status >= 200 && response.status < 300;
+      return {
+        'success': ok,
+        'status': response.status,
+        if (payload != null) ...payload,
+        if (!ok)
+          'error': payload?['error']?.toString() ??
+              'Request to $functionName failed',
+      };
+    } on FunctionException catch (e) {
+      String message = 'Request to $functionName failed';
+      if (e.details is Map && (e.details as Map)['error'] != null) {
+        message = (e.details as Map)['error'].toString();
+      } else if (e.details is String && (e.details as String).isNotEmpty) {
+        message = e.details as String;
+      }
+      return {
+        'success': false,
+        'status': e.status,
+        'error': message,
+      };
+    } catch (e) {
+      debugPrint('Error invoking $functionName: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  /// Dispatch the meeting transcription bot. Payload keys match start-bot.
+  Future<Map<String, dynamic>> startBot({
+    required String meetingId,
+    required String meetingUrl,
+  }) {
+    return _invokeFunction(
+      'start-bot',
+      body: {
+        'meeting_id': meetingId,
+        'meeting_url': meetingUrl,
+      },
+    );
+  }
+
+  /// Fetch the transcript, then summarize and embed it when each step succeeds.
+  Future<Map<String, dynamic>> fetchAndProcessTranscript({
+    required String meetingId,
+    required String meetingUrl,
+  }) async {
+    Map<String, dynamic> result = {
+      'success': false,
+      'error': 'Failed to fetch summary',
+    };
+    try {
+      final transcript = await _invokeFunction(
+        'fetch-transcript',
+        body: {
+          'meeting_id': meetingId,
+          'meeting_url': meetingUrl,
+        },
+      );
+      if (transcript['success'] != true) {
+        result = transcript;
+        return result;
+      }
+
+      final summary = await _invokeFunction(
+        'summarize-transcription',
+        body: {'meeting_id': meetingId},
+      );
+      if (summary['success'] != true) {
+        result = {
+          ...summary,
+          'error': summary['error'] ?? 'Failed to summarize transcription',
+        };
+        return result;
+      }
+
+      final embeddings = await _invokeFunction(
+        'generate-embeddings',
+        body: {'meeting_id': meetingId},
+      );
+      if (embeddings['success'] != true) {
+        result = {
+          ...embeddings,
+          'error': embeddings['error'] ?? 'Failed to generate embeddings',
+        };
+        return result;
+      }
+
+      result = {'success': true, 'status': 200};
+      return result;
+    } catch (e) {
+      debugPrint('Error in fetchAndProcessTranscript: $e');
+      result = {'success': false, 'error': e.toString()};
+      return result;
+    } finally {
+      try {
+        final meeting = await getMeetingDetails(meetingId);
+        if (meeting != null) {
+          result['meeting'] = meeting;
+        }
+      } catch (e) {
+        debugPrint('Error reloading meeting after transcript pipeline: $e');
+      }
+    }
+  }
+
   // Get meeting details
   Future<Map<String, dynamic>?> getMeetingDetails(String meetingId) async {
     try {

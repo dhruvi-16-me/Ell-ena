@@ -46,6 +46,23 @@ class _MeetingScreenState extends State<MeetingScreen> {
     _loadInitialData();
   }
 
+  bool _isPastMeeting(Map<String, dynamic> meeting, DateTime now) {
+    final start =
+        DateTime.tryParse(meeting['meeting_date']?.toString() ?? '')?.toUtc();
+    if (start == null) return false;
+    final minutes = (meeting['duration_minutes'] as num?)?.toInt() ?? 60;
+    final ended = !start.add(Duration(minutes: minutes)).isAfter(now.toUtc());
+
+    final transcript = meeting['transcription']?.toString() ?? '';
+    final summary = meeting['ai_summary']?.toString() ?? '';
+    final hasRecord = transcript.isNotEmpty ||
+        summary.isNotEmpty ||
+        meeting['meeting_summary_json'] != null ||
+        meeting['transcription_status'] == 'completed';
+
+    return ended || hasRecord;
+  }
+
   /// [showLoading] false reloads behind the current list instead of
   /// replacing it with a spinner, e.g. when the side panel closes.
   Future<void> _loadInitialData({bool showLoading = true}) async {
@@ -173,20 +190,16 @@ class _MeetingScreenState extends State<MeetingScreen> {
 
     // Filter meetings based on selected filter
     final filteredMeetings = _meetings.where((meeting) {
-      final meetingDate = DateTime.parse(meeting['meeting_date']);
+      final isPast = _isPastMeeting(meeting, now);
       if (_selectedFilter == 'upcoming') {
-        return meetingDate.isAfter(now);
-      } else {
-        return meetingDate.isBefore(now);
+        return !isPast;
       }
+      return isPast;
     }).toList();
 
-    final upcomingCount = _meetings
-        .where((m) => DateTime.parse(m['meeting_date']).isAfter(now))
-        .length;
-    final pastCount = _meetings
-        .where((m) => DateTime.parse(m['meeting_date']).isBefore(now))
-        .length;
+    final pastCount =
+        _meetings.where((meeting) => _isPastMeeting(meeting, now)).length;
+    final upcomingCount = _meetings.length - pastCount;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -209,7 +222,10 @@ class _MeetingScreenState extends State<MeetingScreen> {
           const SizedBox(height: 12),
           _buildFilterTabs(),
           Expanded(
-            child: _buildMeetingList(filteredMeetings),
+            child: RefreshIndicator(
+              onRefresh: () => _loadInitialData(showLoading: false),
+              child: _buildMeetingList(filteredMeetings),
+            ),
           ),
         ],
       )),
@@ -237,18 +253,16 @@ class _MeetingScreenState extends State<MeetingScreen> {
       setState(() => _selectedMeetingId = meeting['id'] as String?);
       return;
     }
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            MeetingDetailScreen(meetingId: meeting['id']),
+        builder: (context) => MeetingDetailScreen(meetingId: meeting['id']),
       ),
     );
 
-    if (result == true) {
-      // Meeting was updated in detail screen, refresh meetings
-      _loadInitialData();
-    }
+    // Reload even when the page closes without a result, so a finished
+    // summary shows up in the list.
+    _loadInitialData(showLoading: false);
   }
 
   void _closeMeetingPanel() {
@@ -380,41 +394,47 @@ class _MeetingScreenState extends State<MeetingScreen> {
   Widget _buildMeetingList(List<Map<String, dynamic>> filteredMeetings) {
     if (filteredMeetings.isEmpty) {
       final l10n = AppLocalizations.of(context);
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _selectedFilter == 'upcoming'
-                  ? Icons.calendar_today
-                  : Icons.history,
-              size: 70,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.45,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  _selectedFilter == 'upcoming'
+                      ? Icons.calendar_today
+                      : Icons.history,
+                  size: 70,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _selectedFilter == 'upcoming'
+                      ? l10n.meetingNoUpcoming
+                      : l10n.meetingNoPast,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _selectedFilter == 'upcoming'
+                      ? l10n.meetingEmptyUpcomingHint
+                      : l10n.meetingEmptyPastHint,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              _selectedFilter == 'upcoming'
-                  ? l10n.meetingNoUpcoming
-                  : l10n.meetingNoPast,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _selectedFilter == 'upcoming'
-                  ? l10n.meetingEmptyUpcomingHint
-                  : l10n.meetingEmptyPastHint,
-              style: TextStyle(
-                fontSize: 13,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+          ),
+        ],
       );
     }
 
@@ -423,12 +443,12 @@ class _MeetingScreenState extends State<MeetingScreen> {
     }
 
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       itemCount: filteredMeetings.length,
       itemBuilder: (context, index) {
         final meeting = filteredMeetings[index];
-        final meetingDate = DateTime.parse(meeting['meeting_date']);
-        final isUpcoming = meetingDate.isAfter(DateTime.now());
+        final isUpcoming = !_isPastMeeting(meeting, DateTime.now());
 
         return _MeetingCard(
           meeting: meeting,
