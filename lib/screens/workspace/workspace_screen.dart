@@ -11,7 +11,14 @@ import '../../services/supabase_service.dart';
 import '../../widgets/custom_widgets.dart';
 
 class WorkspaceScreen extends StatefulWidget {
-  const WorkspaceScreen({super.key});
+  final int initialTabIndex;
+  final ValueChanged<int>? onTabSelected;
+
+  const WorkspaceScreen({
+    super.key,
+    this.initialTabIndex = 0,
+    this.onTabSelected,
+  });
 
   @override
   State<WorkspaceScreen> createState() => _WorkspaceScreenState();
@@ -28,7 +35,11 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex.clamp(0, 2),
+    );
     _tabController.addListener(_handleTabChange);
 
     // Simulate loading delay
@@ -48,10 +59,22 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(WorkspaceScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTabIndex != widget.initialTabIndex &&
+        _tabController.index != widget.initialTabIndex) {
+      _tabController.animateTo(widget.initialTabIndex.clamp(0, 2));
+    }
+  }
+
   void _handleTabChange() {
     if (_tabController.indexIsChanging) {
       setState(() {});
+      return;
     }
+
+    widget.onTabSelected?.call(_tabController.index);
   }
 
   void _showCreateDialog() {

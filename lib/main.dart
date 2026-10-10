@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'
     hide ChangeNotifierProvider;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'l10n/app_localizations.dart';
-import 'screens/splash_screen.dart';
-import 'screens/home/home_screen.dart';
-import 'screens/chat/chat_screen.dart';
-import 'services/navigation_service.dart';
-import 'services/supabase_service.dart';
-import 'services/ai_service.dart';
 import 'providers/locale_provider.dart';
 import 'providers/shared_preferences_provider.dart';
 import 'providers/theme_provider.dart';
-import 'theme/theme_controller.dart';
+import 'router/app_router.dart';
+import 'services/ai_service.dart';
+import 'services/supabase_service.dart';
 import 'theme/app_themes.dart';
+import 'theme/theme_controller.dart';
+import 'utils/url_strategy.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  configureAppUrlStrategy();
 
   try {
     await SupabaseService().initialize();
@@ -52,100 +51,58 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeController = ref.watch(themeControllerProvider);
-    final locale = ref.watch(localeControllerProvider);
-    return MaterialApp(
+    final router = ref.watch(appRouterProvider);
+
+    return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
-      locale: locale,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      locale: ref.watch(localeControllerProvider),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      navigatorKey: NavigationService().navigatorKey,
-      navigatorObservers: <NavigatorObserver>[AppRouteObserver.instance],
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: themeController.flutterThemeMode,
-      home: const SplashScreen(),
-      onGenerateRoute: (settings) {
-        if (settings.name == '/') {
-          return MaterialPageRoute(
-            builder: (context) => const SplashScreen(),
-            settings: settings,
-          );
-        } else if (settings.name == '/home') {
-          final args = (settings.arguments is Map<String, dynamic>) 
-              ? settings.arguments as Map<String, dynamic> 
-              : null;
-              
-          return MaterialPageRoute(
-            builder: (context) => HomeScreen(arguments: args),
-            settings: settings,
-          );
-        } else if (settings.name == '/chat') {
-          final args = (settings.arguments is Map<String, dynamic>) 
-              ? settings.arguments as Map<String, dynamic> 
-              : null;
-              
-          return MaterialPageRoute(
-            builder: (context) => ChatScreen(arguments: args),
-            settings: settings,
-          );
-        }
-        return null;
-      },
+      routerConfig: router,
     );
   }
 }
 
 class WidgetsBindingObserverWidget extends StatefulWidget {
-    final Widget child;
+  final Widget child;
 
-    const WidgetsBindingObserverWidget({
-      super.key,
-      required this.child,
-    });
+  const WidgetsBindingObserverWidget({
+    super.key,
+    required this.child,
+  });
 
-    @override
-    State<WidgetsBindingObserverWidget> createState() =>
-        _WidgetsBindingObserverWidgetState();
-  }
-
-  class _WidgetsBindingObserverWidgetState
-      extends State<WidgetsBindingObserverWidget>
-      with WidgetsBindingObserver {
-
-    @override
-    void initState() {
-      super.initState();
-      WidgetsBinding.instance.addObserver(this);
-    }
-
-    @override
-    void didChangeAppLifecycleState(AppLifecycleState state) {
-      if (state == AppLifecycleState.detached) {
-        SupabaseService().dispose(); // ✅ ONLY IMPORTANT LINE
-      }
-    }
-
-    @override
-    void dispose() {
-      WidgetsBinding.instance.removeObserver(this);
-      super.dispose();
-    }
-
-    @override
-    Widget build(BuildContext context) {
-      return widget.child;
-    }
-  }
-
-// Simple singleton RouteObserver to allow screens to refresh on focus
-class AppRouteObserver extends RouteObserver<ModalRoute<void>> {
-  AppRouteObserver._();
-  static final AppRouteObserver instance = AppRouteObserver._();
+  @override
+  State<WidgetsBindingObserverWidget> createState() =>
+      _WidgetsBindingObserverWidgetState();
 }
 
+class _WidgetsBindingObserverWidgetState
+    extends State<WidgetsBindingObserverWidget> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached) {
+      SupabaseService().dispose();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
+}

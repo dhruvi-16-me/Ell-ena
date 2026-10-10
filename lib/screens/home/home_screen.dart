@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../providers/navigation/models/home_tab.dart';
-import '../../providers/navigation_provider.dart';
+import '../../router/app_routes.dart';
 import '../../shell/app_shell.dart';
 import '../../shell/desktop_shell.dart';
 import '../../shell/shell_destination.dart';
@@ -13,76 +13,84 @@ import '../profile/profile_screen.dart';
 import '../workspace/workspace_screen.dart';
 import 'dashboard_screen.dart';
 
-class HomeScreen extends ConsumerStatefulWidget {
-  final Map<String, dynamic>? arguments;
+class HomeScreen extends StatefulWidget {
+  final String location;
+  final Map<String, String> queryParameters;
 
-  const HomeScreen({super.key, this.arguments});
+  const HomeScreen({
+    super.key,
+    this.location = AppRoutes.home,
+    this.queryParameters = const {},
+  });
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
-  List<Widget> _screens = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeScreens();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _applyRouteArguments();
-    });
+class _HomeScreenState extends State<HomeScreen> {
+  String get _currentPath {
+    final routePath = GoRouterState.of(context).uri.path;
+    if (routePath.isNotEmpty) return routePath;
+    return widget.location;
   }
 
-  void _initializeScreens() {
-    _screens = [
-      const DashboardScreen(),
-      const CalendarScreen(),
-      const WorkspaceScreen(),
-      const ChatScreen(),
-      const ProfileScreen(),
-    ];
-  }
+  HomeTab get _selectedTab => AppRoutes.homeTabForPath(_currentPath);
 
-  void _applyRouteArguments() {
-    final args = widget.arguments;
-    if (args == null) return;
-
-    if (args.containsKey('screen') && args['screen'] is int) {
-      ref.read(homeTabProvider.notifier).state =
-          HomeTab.fromIndex(args['screen'] as int);
-    }
-
-    if (args.containsKey('initial_message') &&
-        args['initial_message'] is String &&
-        ref.read(homeTabProvider) == HomeTab.chat) {
-      setState(() {
-        _screens[HomeTab.chat.index] = ChatScreen(
-          arguments: {'initial_message': args['initial_message']},
-        );
-      });
-    }
-  }
+  int get _workspaceTabIndex =>
+      AppRoutes.workspaceTabIndexForPath(_currentPath) ?? 0;
 
   void _selectTab(int index) {
-    ref.read(homeTabProvider.notifier).state = HomeTab.fromIndex(index);
+    final path = AppRoutes.pathForHomeTab(HomeTab.fromIndex(index));
+    if (_currentPath != path) {
+      context.go(path);
+    }
+  }
+
+  void _onWorkspaceTabSelected(int index) {
+    final path = AppRoutes.pathForWorkspaceTabIndex(index);
+    if (_currentPath != path) {
+      context.go(path);
+    }
+  }
+
+  String? get _chatMessage {
+    final fromRoute = GoRouterState.of(context).uri.queryParameters['message'];
+    if (fromRoute != null && fromRoute.isNotEmpty) return fromRoute;
+    final message = widget.queryParameters['message'];
+    if (message == null || message.isEmpty) return null;
+    return message;
+  }
+
+  Map<String, dynamic>? get _chatArguments {
+    final message = _chatMessage;
+    if (message == null) return null;
+    return {'initial_message': message};
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final selectedTab = ref.watch(homeTabProvider);
-    final selectedDestination = ShellDestination.values[selectedTab.index];
-    final content = IndexedStack(
-      index: selectedTab.index,
-      children: _screens,
-    );
+    final selectedTab = _selectedTab;
+    final screens = <Widget>[
+      const DashboardScreen(),
+      const CalendarScreen(),
+      WorkspaceScreen(
+        key: ValueKey<int>(_workspaceTabIndex),
+        initialTabIndex: _workspaceTabIndex,
+        onTabSelected: _onWorkspaceTabSelected,
+      ),
+      ChatScreen(
+        key: ValueKey<String?>(_chatMessage),
+        arguments: _chatArguments,
+      ),
+      const ProfileScreen(),
+    ];
+    final content = IndexedStack(index: selectedTab.index, children: screens);
 
     if (AppShell.isDesktop(context)) {
       return DesktopShell(
-        selectedDestination: selectedDestination,
+        selectedDestination: ShellDestination.values[selectedTab.index],
         onDestinationSelected: (destination) => _selectTab(destination.index),
         child: content,
       );
@@ -91,9 +99,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       body: content,
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         currentIndex: selectedTab.index,
         onTap: _selectTab,
-        type: BottomNavigationBarType.fixed,
         selectedItemColor: theme.colorScheme.primary,
         unselectedItemColor: theme.colorScheme.onSurfaceVariant,
         items: [
