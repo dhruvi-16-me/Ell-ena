@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
+
 enum ShellDestination {
   dashboard,
   calendar,
@@ -7,18 +9,18 @@ enum ShellDestination {
   chat,
   profile;
 
-  String get label {
+  String labelFor(AppLocalizations l10n) {
     switch (this) {
       case ShellDestination.dashboard:
-        return 'Dashboard';
+        return l10n.dashboard;
       case ShellDestination.calendar:
-        return 'Calendar';
+        return l10n.calendar;
       case ShellDestination.workspace:
-        return 'Workspace';
+        return l10n.workspace;
       case ShellDestination.chat:
-        return 'Chat';
+        return l10n.chat;
       case ShellDestination.profile:
-        return 'Profile';
+        return l10n.profile;
     }
   }
 

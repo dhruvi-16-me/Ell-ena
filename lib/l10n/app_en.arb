@@ -28,6 +28,22 @@
   "@dashboard": {
     "description": "Dashboard navigation label."
   },
+  "calendar": "Calendar",
+  "@calendar": {
+    "description": "Calendar navigation label."
+  },
+  "workspace": "Workspace",
+  "@workspace": {
+    "description": "Workspace navigation label."
+  },
+  "chat": "Chat",
+  "@chat": {
+    "description": "Chat navigation label."
+  },
+  "profile": "Profile",
+  "@profile": {
+    "description": "Profile navigation label."
+  },
   "tasks": "Tasks",
   "@tasks": {
     "description": "Tasks section label."

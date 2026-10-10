@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../shell_destination.dart';
 
 /// Fixed-width sidebar aligned with Figma shell (~288px).
@@ -148,9 +149,9 @@ class _ShellNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final foregroundColor = isSelected
-        ? colorScheme.primary
-        : colorScheme.onSurfaceVariant;
+    final l10n = AppLocalizations.of(context);
+    final foregroundColor =
+        isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -173,13 +174,12 @@ class _ShellNavItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  destination.label,
+                  destination.labelFor(l10n),
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: isSelected
                         ? colorScheme.onSurface
                         : colorScheme.onSurfaceVariant,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),
               ],
