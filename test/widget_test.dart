@@ -36,7 +36,8 @@ void main() {
     expect(find.text('डैशबोर्ड'), findsOneWidget);
   });
 
-  testWidgets('languageName returns English for en locale code', (tester) async {
+  testWidgets('languageName returns English for en locale code',
+      (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
