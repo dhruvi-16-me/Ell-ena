@@ -6,7 +6,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../router/app_routes.dart';
+
 class SupabaseService {
+  static const _mobileOAuthRedirect = 'io.supabase.ellena://login-callback';
+
   static final SupabaseService _instance = SupabaseService._internal();
   late final SupabaseClient _client;
   bool _isInitialized = false;
@@ -57,8 +61,8 @@ class SupabaseService {
         debugPrint('Error loading .env file: $e');
       });
 
-      final supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
-      final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+      final supabaseUrl = dotenv.env['SUPABASE_URL']?.trim() ?? '';
+      final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY']?.trim() ?? '';
 
       if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
         throw Exception(
@@ -518,8 +522,7 @@ class SupabaseService {
         };
       }
 
-      final redirectUrl = dotenv.env['OAUTH_REDIRECT_URL'] ??
-          'io.supabase.ellena://login-callback';
+      final redirectUrl = _oauthRedirectUrl;
 
       // Create a completer to wait for auth state change
       final completer = Completer<Map<String, dynamic>>();
@@ -546,7 +549,9 @@ class SupabaseService {
       final response = await _client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: redirectUrl,
-        authScreenLaunchMode: LaunchMode.externalApplication,
+        authScreenLaunchMode: kIsWeb
+            ? LaunchMode.platformDefault
+            : LaunchMode.externalApplication,
         queryParams: const {
           'access_type': 'offline',
           'prompt': 'consent',
@@ -558,6 +563,16 @@ class SupabaseService {
         return {
           'success': false,
           'error': 'Failed to launch Google sign-in',
+        };
+      }
+
+      // Web leaves this page for Google and returns to the Pages URL.
+      // Supabase reads the session from that callback on the next load.
+      if (kIsWeb) {
+        await authSubscription.cancel();
+        return {
+          'success': true,
+          'pendingRedirect': true,
         };
       }
 
@@ -579,6 +594,40 @@ class SupabaseService {
         'error': e.toString(),
       };
     }
+  }
+
+  /// Web uses an http(s) `OAUTH_REDIRECT_URL`, or the current site root.
+  /// Android and iOS keep the native deep link.
+  String get _oauthRedirectUrl {
+    final configured = dotenv.env['OAUTH_REDIRECT_URL']?.trim();
+    if (kIsWeb) {
+      if (configured != null &&
+          (configured.startsWith('https://') ||
+              configured.startsWith('http://'))) {
+        return configured;
+      }
+      return _currentWebRedirect();
+    }
+    if (configured != null && configured.isNotEmpty) return configured;
+    return _mobileOAuthRedirect;
+  }
+
+  /// Site root for this deployment, without a shell route such as `/home`.
+  String _currentWebRedirect() {
+    final uri = Uri.base;
+    var path = uri.path;
+    if (path.length > 1 && path.endsWith('/')) {
+      path = path.substring(0, path.length - 1);
+    }
+    for (final route in AppRoutes.shellPaths) {
+      if (path.endsWith(route)) {
+        path = path.substring(0, path.length - route.length);
+        break;
+      }
+    }
+    if (path.isEmpty) path = '/';
+    if (!path.endsWith('/')) path = '$path/';
+    return uri.replace(path: path, query: '', fragment: '').toString();
   }
 
   // Helper method to process authenticated user

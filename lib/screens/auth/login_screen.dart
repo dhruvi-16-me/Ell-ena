@@ -118,6 +118,9 @@ class _LoginScreenState extends State<LoginScreen>
       final result = await _supabaseService.signInWithGoogle();
 
       if (mounted) {
+        if (result['pendingRedirect'] == true) {
+          return;
+        }
         if (result['success'] == true) {
           if (result['isNewUser'] == true) {
             // New user - show team selection dialog
