@@ -102,7 +102,10 @@ class CustomButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor:
               isOutlined ? Colors.transparent : Colors.green.shade400,
-          foregroundColor: Colors.white,
+          foregroundColor:
+              isOutlined
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side:
@@ -147,8 +150,9 @@ class AuthScreenWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -158,16 +162,19 @@ class AuthScreenWrapper extends StatelessWidget {
               const SizedBox(height: 40),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 subtitle,
-                style: TextStyle(fontSize: 16, color: Colors.grey.shade400),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 30),
               ...children,

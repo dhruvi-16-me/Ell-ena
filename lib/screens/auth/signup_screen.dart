@@ -428,15 +428,15 @@ class _SignupScreenState extends State<SignupScreen>
         Center(
           child: OutlinedButton.icon(
             onPressed: _isLoading ? null : _handleGoogleSignIn,
-            icon: const FaIcon(
+            icon: FaIcon(
               FontAwesomeIcons.google,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               size: 20,
             ),
-            label: const Text(
+            label: Text(
               'Sign up with Google',
               style: TextStyle(
-                color: Colors.grey,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),

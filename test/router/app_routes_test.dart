@@ -25,5 +25,22 @@ void main() {
       expect(AppRoutes.pathForWorkspaceTabIndex(1), AppRoutes.tickets);
       expect(AppRoutes.pathForWorkspaceTabIndex(2), AppRoutes.meetings);
     });
+
+    test('resumes only in-app locations after startup', () {
+      expect(AppRoutes.resumableLocation('/tasks'), '/tasks');
+      expect(
+        AppRoutes.resumableLocation('/chat?message=hi'),
+        '/chat?message=hi',
+      );
+      expect(AppRoutes.resumableLocation(AppRoutes.login), AppRoutes.login);
+
+      expect(AppRoutes.resumableLocation(null), isNull);
+      expect(AppRoutes.resumableLocation('https://example.com'), isNull);
+      expect(AppRoutes.resumableLocation('https://example.com/home'), isNull);
+      expect(AppRoutes.resumableLocation('//example.com/home'), isNull);
+      expect(AppRoutes.resumableLocation('javascript:alert(1)'), isNull);
+      expect(AppRoutes.resumableLocation(AppRoutes.splash), isNull);
+      expect(AppRoutes.resumableLocation('/not-a-route'), isNull);
+    });
   });
 }

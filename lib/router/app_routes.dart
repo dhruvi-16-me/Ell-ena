@@ -4,6 +4,7 @@ import '../providers/navigation/models/home_tab.dart';
 class AppRoutes {
   AppRoutes._();
   static const splash = '/';
+  static const login = '/login';
   static const home = '/home';
   static const calendar = '/calendar';
   static const workspace = '/workspace';
@@ -12,6 +13,20 @@ class AppRoutes {
   static const meetings = '/meetings';
   static const chat = '/chat';
   static const profile = '/profile';
+
+  /// Splash query parameter holding the location to resume after startup.
+  static const fromParam = 'from';
+
+  /// Returns [location] if it is an in-app route the splash may resume after
+  /// startup, otherwise null. Rejects absolute and protocol-relative URLs
+  /// (e.g. `https://example.com`, `//example.com/home`) and unknown paths.
+  static String? resumableLocation(String? location) {
+    if (location == null) return null;
+    final uri = Uri.tryParse(location);
+    if (uri == null || uri.hasScheme || uri.hasAuthority) return null;
+    if (uri.path != login && !shellPaths.contains(uri.path)) return null;
+    return uri.toString();
+  }
 
   static const shellPaths = <String>{
     home,

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/navigation/models/home_tab.dart';
 import '../router/app_routes.dart';
+import '../screens/auth/login_screen.dart';
 import '../screens/home/home_screen.dart';
 
 class NavigationService {
@@ -55,6 +56,13 @@ class NavigationService {
     router.go(AppRoutes.home);
   }
 
+  /// Pops screens and dialogs pushed with [navigateTo] or showDialog. go_router
+  /// drops them when their page is replaced, but going to the location already
+  /// showing (e.g. /login under sign-up) keeps the page, so they stay on top.
+  void _clearPushedRoutes() {
+    navigatorKey.currentState?.popUntil((route) => route.settings is Page);
+  }
+
   Future<dynamic> navigateTo(Widget screen) {
     final navigator = navigatorKey.currentState;
     if (navigator == null) {
@@ -68,6 +76,11 @@ class NavigationService {
   Future<dynamic> navigateToReplacement(Widget screen) {
     if (screen is HomeScreen) {
       goHome();
+      return Future<void>.value();
+    }
+    if (screen is LoginScreen) {
+      _clearPushedRoutes();
+      router.go(AppRoutes.login);
       return Future<void>.value();
     }
 

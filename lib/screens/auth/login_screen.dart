@@ -257,16 +257,16 @@ class _LoginScreenState extends State<LoginScreen>
                   // Google Sign-In Button
                   OutlinedButton.icon(
                     onPressed: _isLoading ? null : _handleGoogleSignIn,
-                    icon: const FaIcon(
+                    icon: FaIcon(
                       FontAwesomeIcons.google,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       size: 20,
                     ),
-                    label: const Text(
+                    label: Text(
                       'Sign in with Google',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

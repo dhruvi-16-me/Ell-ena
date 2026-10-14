@@ -9,7 +9,6 @@ import 'providers/locale_provider.dart';
 import 'providers/shared_preferences_provider.dart';
 import 'providers/theme_provider.dart';
 import 'router/app_router.dart';
-import 'services/ai_service.dart';
 import 'services/supabase_service.dart';
 import 'theme/app_themes.dart';
 import 'theme/theme_controller.dart';
@@ -19,13 +18,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   configureAppUrlStrategy();
 
-  try {
-    await SupabaseService().initialize();
-    await AIService().initialize();
-  } catch (e) {
-    debugPrint('Error initializing services: $e');
-  }
-
+  // Only local reads before the first frame; network-bound service setup runs
+  // behind the splash via AppStartup.
   final prefs = await SharedPreferences.getInstance();
   final themeController = await ThemeController.create();
 

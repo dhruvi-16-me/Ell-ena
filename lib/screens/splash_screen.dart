@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'onboarding/onboarding_screen.dart';
+import '../router/app_routes.dart';
+import '../services/app_startup.dart';
 import '../services/navigation_service.dart';
 import '../services/supabase_service.dart';
-import 'auth/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  /// Location the user opened before startup finished, resumed afterwards.
+  final String? from;
+
+  const SplashScreen({super.key, this.from});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -37,32 +40,30 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animationController.forward();
 
-    Timer(const Duration(milliseconds: 1500), () {
-      _checkSession();
-    });
+    _checkSession();
   }
 
+  /// Leaves once both the intro animation and service startup have finished.
   Future<void> _checkSession() async {
     try {
-      final currentUser = _supabaseService.client.auth.currentUser;
+      await Future.wait([
+        AppStartup.ensureInitialized(),
+        Future<void>.delayed(const Duration(milliseconds: 1500)),
+      ]);
+      if (!mounted) return;
 
-      final args = ModalRoute.of(context)?.settings.arguments;
-
-      if (currentUser != null) {
-        if (args != null && args is Map<String, dynamic>) {
-          NavigationService().goHome(arguments: args);
-        } else {
-          NavigationService().goHome();
-        }
+      final from = AppRoutes.resumableLocation(widget.from);
+      if (from != null) {
+        // The router guard sends this to /login when there is no session.
+        NavigationService().router.go(from);
+      } else if (_supabaseService.client.auth.currentUser != null) {
+        NavigationService().goHome();
       } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const LoginScreen(),
-          ),
-        );
+        NavigationService().router.go(AppRoutes.login);
       }
     } catch (e) {
       debugPrint('Error checking session: $e');
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => const OnboardingScreen(),
