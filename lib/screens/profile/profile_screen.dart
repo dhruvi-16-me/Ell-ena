@@ -5,10 +5,10 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../../services/supabase_service.dart';
-import '../../services/navigation_service.dart';
 import '../../theme/app_theme_mode.dart';
+import '../../shell/shell_refreshable.dart';
 import '../../theme/theme_controller.dart';
-import '../auth/login_screen.dart';
+import '../../widgets/account_actions.dart';
 import 'team_members_screen.dart';
 import 'edit_profile_screen.dart';
 
@@ -19,7 +19,8 @@ class ProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
+    implements ShellRefreshable {
   final _supabaseService = SupabaseService();
   bool _isLoading = true;
   Map<String, dynamic>? _userProfile;
@@ -30,6 +31,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.initState();
     _loadUserProfile();
   }
+
+  @override
+  Future<void> refreshFromShell() => _loadUserProfile();
 
   Future<void> _loadUserProfile() async {
     setState(() {
@@ -75,72 +79,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  Future<void> _handleLogout() async {
-    final l10n = AppLocalizations.of(context);
-    //Confirmation dialog
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Text(l10n.logoutTitle),
-        content: Text(l10n.logoutMessage),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade400,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: Text(
-              l10n.logout,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldLogout != true) return;
-
-    // modal loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    try {
-      await _supabaseService.signOut();
-
-      if (mounted) {
-        Navigator.pop(context); // close loader
-        NavigationService().navigateToReplacement(const LoginScreen());
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context); // close loader
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error logging out: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  Future<void> _handleLogout() => confirmAndSignOut(context);
 
   @override
   Widget build(BuildContext context) {

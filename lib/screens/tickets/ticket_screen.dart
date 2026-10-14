@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../shell/app_shell.dart';
 import '../../services/supabase_service.dart';
 import '../../widgets/custom_widgets.dart';
 import 'ticket_detail_screen.dart';
@@ -11,6 +12,11 @@ class TicketScreen extends StatefulWidget {
   const TicketScreen({super.key});
 
   // Static method to refresh tickets from anywhere
+  /// Opens the create-ticket screen; used by the wide shell's top bar.
+  static void openCreateTicket() {
+    globalKey.currentState?._openCreateTicket();
+  }
+
   static void refreshTickets() {
     final state = globalKey.currentState;
     if (state != null) {
@@ -124,6 +130,26 @@ class _TicketScreenState extends State<TicketScreen> {
     }
   }
 
+  Future<void> _openCreateTicket() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CreateTicketScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+
+    if (result == true) {
+      refreshTickets();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ticket created successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -150,29 +176,15 @@ class _TicketScreenState extends State<TicketScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CreateTicketScreen(),
-              fullscreenDialog: true,
+      // Wide screens create from the shell's top bar instead.
+      floatingActionButton: AppShell.isDesktop(context)
+          ? null
+          : FloatingActionButton(
+              heroTag: 'tickets-add-button',
+              onPressed: _openCreateTicket,
+              backgroundColor: Colors.green.shade400,
+              child: const Icon(Icons.add, color: Colors.white),
             ),
-          );
-
-          if (result == true) {
-            refreshTickets();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Ticket created successfully'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        },
-        backgroundColor: Colors.green.shade400,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
       body: Column(
         children: [
           _buildProgressHeader(

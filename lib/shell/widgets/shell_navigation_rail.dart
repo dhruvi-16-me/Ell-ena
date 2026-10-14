@@ -70,7 +70,7 @@ class ShellNavigationRail extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 children: [
-                  for (final destination in ShellDestination.values)
+                  for (final destination in ShellDestination.sidebar)
                     _ShellNavItem(
                       destination: destination,
                       isSelected: destination == selectedDestination,
@@ -78,52 +78,6 @@ class ShellNavigationRail extends StatelessWidget {
                           ? null
                           : () => onDestinationSelected!(destination),
                     ),
-                ],
-              ),
-            ),
-            Divider(
-              height: 1,
-              thickness: 1,
-              color: colorScheme.outlineVariant,
-              indent: 24,
-              endIndent: 24,
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 21,
-                    backgroundColor:
-                        colorScheme.primary.withValues(alpha: 0.15),
-                    child: Icon(
-                      Icons.person,
-                      size: 20,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Account',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'Signed in',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),

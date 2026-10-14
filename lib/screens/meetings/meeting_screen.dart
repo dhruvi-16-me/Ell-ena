@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../shell/app_shell.dart';
 import '../../services/supabase_service.dart';
 import '../../widgets/custom_widgets.dart';
 import 'create_meeting_screen.dart';
@@ -15,6 +16,11 @@ class MeetingScreen extends StatefulWidget {
 
   static void refreshMeetings() {
     globalKey.currentState?._loadInitialData();
+  }
+
+  /// Opens the create-meeting screen; used by the wide shell's top bar.
+  static void openCreateMeeting() {
+    globalKey.currentState?._openCreateMeeting();
   }
 
   @override
@@ -126,6 +132,20 @@ class _MeetingScreenState extends State<MeetingScreen> {
     }
   }
 
+  Future<void> _openCreateMeeting() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>  CreateMeetingScreen(),
+      ),
+    );
+
+    if (result == true) {
+      // Meeting was created, refresh meetings
+      _loadInitialData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -163,23 +183,15 @@ class _MeetingScreenState extends State<MeetingScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>  CreateMeetingScreen(),
+      // Wide screens create from the shell's top bar instead.
+      floatingActionButton: AppShell.isDesktop(context)
+          ? null
+          : FloatingActionButton(
+              heroTag: 'meetings-add-button',
+              onPressed: _openCreateMeeting,
+              backgroundColor: Colors.green.shade700,
+              child: const Icon(Icons.add, color: Colors.white),
             ),
-          );
-
-          if (result == true) {
-            // Meeting was created, refresh meetings
-            _loadInitialData();
-          }
-        },
-        backgroundColor: Colors.green.shade700,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
       body: Column(
         children: [
           _buildHeader(

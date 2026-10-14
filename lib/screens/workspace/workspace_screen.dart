@@ -216,6 +216,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'workspace-add-button',
         onPressed: _showCreateDialog,
         backgroundColor: Colors.green,
         child: const Icon(Icons.add),

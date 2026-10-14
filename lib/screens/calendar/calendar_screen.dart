@@ -8,6 +8,7 @@ import '../tasks/create_task_screen.dart';
 import '../tickets/create_ticket_screen.dart';
 import '../meetings/create_meeting_screen.dart';
 import '../../services/supabase_service.dart';
+import '../../shell/shell_refreshable.dart';
 import '../../widgets/custom_widgets.dart';
 import '../meetings/meeting_detail_screen.dart';
 import '../tasks/task_detail_screen.dart';
@@ -21,7 +22,8 @@ class CalendarScreen extends StatefulWidget {
   State<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
+class _CalendarScreenState extends State<CalendarScreen>
+    implements ShellRefreshable {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -111,6 +113,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   // Load events from cache or network
+  /// Skips the 5-minute cache: an explicit refresh should show fresh data.
+  @override
+  Future<void> refreshFromShell() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _events.clear();
+    });
+    try {
+      await _loadEventsFromNetwork();
+      await _saveEventsToCache();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   Future<void> _loadEventsWithCache() async {
     try {
       if (!mounted) return;

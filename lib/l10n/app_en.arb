@@ -92,5 +92,136 @@
   "selectLanguage": "Select Language",
   "@selectLanguage": {
     "description": "Title for the language selection sheet."
+  },
+  "refresh": "Refresh",
+  "@refresh": {
+    "description": "Tooltip for the button that reloads the open page."
+  },
+  "switchTeam": "Switch Team",
+  "@switchTeam": {
+    "description": "Title of the team switcher dialog and tooltip of the team button."
+  },
+  "teamCode": "Team Code: {code}",
+  "@teamCode": {
+    "description": "Team code shown under each team in the team switcher.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "teamFallbackName": "Team",
+  "@teamFallbackName": {
+    "description": "Shown when a team has no name."
+  },
+  "myTeam": "My Team",
+  "@myTeam": {
+    "description": "Shown when the current team's name is unknown."
+  },
+  "errorSwitchingTeam": "Error switching team: {error}",
+  "@errorSwitchingTeam": {
+    "description": "Snackbar when switching teams fails.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardWelcomeBack": "Welcome back,",
+  "@dashboardWelcomeBack": {
+    "description": "Greeting above the user's name on the phone dashboard."
+  },
+  "dashboardTodaysOverview": "Today's Overview",
+  "@dashboardTodaysOverview": {
+    "description": "Title of the phone dashboard summary card."
+  },
+  "dashboardTotalTasks": "Total Tasks",
+  "@dashboardTotalTasks": {
+    "description": "Dashboard stat label."
+  },
+  "dashboardInProgress": "In Progress",
+  "@dashboardInProgress": {
+    "description": "Dashboard stat label for tasks in progress."
+  },
+  "dashboardCompleted": "Completed",
+  "@dashboardCompleted": {
+    "description": "Dashboard stat label for completed tasks."
+  },
+  "dashboardOpenTickets": "Open Tickets",
+  "@dashboardOpenTickets": {
+    "description": "Dashboard stat label."
+  },
+  "dashboardTicketsInProgress": "Tickets In Progress",
+  "@dashboardTicketsInProgress": {
+    "description": "Dashboard stat label."
+  },
+  "dashboardResolved": "Resolved",
+  "@dashboardResolved": {
+    "description": "Dashboard stat label for resolved tickets."
+  },
+  "dashboardTaskCompletionByDay": "Task Completion by Day",
+  "@dashboardTaskCompletionByDay": {
+    "description": "Title of the dashboard completion chart."
+  },
+  "dashboardWeek": "Week",
+  "@dashboardWeek": {
+    "description": "Chart range option."
+  },
+  "dashboardMonth": "Month",
+  "@dashboardMonth": {
+    "description": "Chart range option."
+  },
+  "dashboardNoCompletions": "No completions yet",
+  "@dashboardNoCompletions": {
+    "description": "Empty state of the completion chart."
+  },
+  "dashboardUpcoming": "Upcoming",
+  "@dashboardUpcoming": {
+    "description": "Title of the upcoming items section."
+  },
+  "dashboardNothingUpcoming": "Nothing due today or scheduled soon",
+  "@dashboardNothingUpcoming": {
+    "description": "Empty state of the upcoming section."
+  },
+  "dashboardRecentActivity": "Recent Activity",
+  "@dashboardRecentActivity": {
+    "description": "Title of the recent activity section."
+  },
+  "dashboardNoRecentActivity": "No recent activity",
+  "@dashboardNoRecentActivity": {
+    "description": "Empty state of the recent activity section."
+  },
+  "dashboardTask": "Task",
+  "@dashboardTask": {
+    "description": "Type label for a task in dashboard lists."
+  },
+  "dashboardTicket": "Ticket",
+  "@dashboardTicket": {
+    "description": "Type label for a ticket in dashboard lists."
+  },
+  "dashboardMeeting": "Meeting",
+  "@dashboardMeeting": {
+    "description": "Fallback title for a meeting without a title."
+  },
+  "dashboardStatus": "Status: {status}",
+  "@dashboardStatus": {
+    "description": "Status line in the recent activity list.",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "newTask": "New Task",
+  "@newTask": {
+    "description": "Wide-screen top bar button that opens the create-task screen."
+  },
+  "newTicket": "New Ticket",
+  "@newTicket": {
+    "description": "Wide-screen top bar button that opens the create-ticket screen."
+  },
+  "newMeeting": "New Meeting",
+  "@newMeeting": {
+    "description": "Wide-screen top bar button that opens the create-meeting screen."
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../shell/app_shell.dart';
 import '../../services/supabase_service.dart';
 import '../../widgets/custom_widgets.dart';
 import 'task_detail_screen.dart';
@@ -14,6 +15,11 @@ class TaskScreen extends StatefulWidget {
   // Static method to refresh tasks from anywhere
   static void refreshTasks() {
     globalKey.currentState?.refreshTasks();
+  }
+
+  /// Opens the create-task screen; used by the wide shell's top bar.
+  static void openCreateTask() {
+    globalKey.currentState?._openCreateTask();
   }
 
   @override
@@ -134,6 +140,26 @@ class _TaskScreenState extends State<TaskScreen> {
     }
   }
 
+  Future<void> _openCreateTask() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CreateTaskScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+
+    if (result == true) {
+      _loadTasks();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Task created successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -159,29 +185,15 @@ class _TaskScreenState extends State<TaskScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CreateTaskScreen(),
-              fullscreenDialog: true,
+      // Wide screens create from the shell's top bar instead.
+      floatingActionButton: AppShell.isDesktop(context)
+          ? null
+          : FloatingActionButton(
+              heroTag: 'tasks-add-button',
+              onPressed: _openCreateTask,
+              backgroundColor: Colors.green.shade400,
+              child: const Icon(Icons.add, color: Colors.white),
             ),
-          );
-
-          if (result == true) {
-            _loadTasks();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Task created successfully'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        },
-        backgroundColor: Colors.green.shade400,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
       body: Column(
         children: [
           _buildProgressHeader(
