@@ -89,6 +89,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
   }
 
   void _showCreateTaskDialog() {
+    final l10n = AppLocalizations.of(context);
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CreateTaskScreen()),
@@ -105,8 +106,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
         TaskScreen.refreshTasks();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Task created successfully'),
+          SnackBar(
+            content: Text(l10n.workspaceTaskCreated),
             backgroundColor: Colors.green,
           ),
         );
@@ -115,6 +116,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
   }
 
   void _showCreateTicketDialog() {
+    final l10n = AppLocalizations.of(context);
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CreateTicketScreen()),
@@ -131,8 +133,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
         TicketScreen.refreshTickets();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ticket created successfully'),
+          SnackBar(
+            content: Text(l10n.workspaceTicketCreated),
             backgroundColor: Colors.green,
           ),
         );
@@ -141,6 +143,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
   }
 
   void _showCreateMeetingDialog() {
+    final l10n = AppLocalizations.of(context);
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) =>  CreateMeetingScreen()),
@@ -157,8 +160,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
         MeetingScreen.refreshMeetings();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Meeting created successfully'),
+          SnackBar(
+            content: Text(l10n.workspaceMeetingCreated),
             backgroundColor: Colors.green,
           ),
         );
@@ -218,6 +221,11 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
       floatingActionButton: FloatingActionButton(
         heroTag: 'workspace-add-button',
         onPressed: _showCreateDialog,
+        tooltip: _tabController.index == 0
+            ? l10n.newTask
+            : _tabController.index == 1
+                ? l10n.newTicket
+                : l10n.newMeeting,
         backgroundColor: Colors.green,
         child: const Icon(Icons.add),
       ),

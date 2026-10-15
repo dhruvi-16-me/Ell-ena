@@ -56,6 +56,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
+    final l10n = AppLocalizations.of(context);
 
     setState(() {
       _isLoading = true;
@@ -75,8 +76,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (success) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profile updated successfully'),
+              SnackBar(
+                content: Text(l10n.profileUpdated),
                 backgroundColor: Colors.green,
               ),
             );
@@ -90,8 +91,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Failed to update profile'),
+              SnackBar(
+                content: Text(l10n.profileUpdateFailed),
                 backgroundColor: Colors.red,
               ),
             );
@@ -105,7 +106,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error updating profile: $e'),
+            content: Text(l10n.profileUpdateError('$e')),
             backgroundColor: Colors.red,
           ),
         );
@@ -126,7 +127,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        title: const Text('Edit Profile'),
+        title: Text(l10n.profileEditProfile),
         actions: [
           TextButton.icon(
             onPressed: _isLoading ? null : _saveProfile,
@@ -199,7 +200,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 32),
                     Text(
-                      'Personal Information',
+                      l10n.profilePersonalInformation,
                       style: Theme.of(context)
                           .textTheme
                           .titleLarge
@@ -208,11 +209,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: _firstNameController,
-                      label: 'First Name',
+                      label: l10n.profileFirstName,
                       icon: Icons.person_outline,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your first name';
+                          return l10n.profileFirstNameRequired;
                         }
                         return null;
                       },
@@ -220,7 +221,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: _lastNameController,
-                      label: 'Last Name',
+                      label: l10n.profileLastName,
                       icon: Icons.person_outline,
                     ),
                     const SizedBox(height: 16),
@@ -230,15 +231,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       style: TextStyle(
                           color:
                               Theme.of(context).colorScheme.onSurfaceVariant),
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        helperText: 'Email cannot be changed',
-                        prefixIcon: Icon(Icons.email_outlined),
+                      decoration: InputDecoration(
+                        labelText: l10n.profileEmail,
+                        helperText: l10n.profileEmailCannotChange,
+                        prefixIcon: const Icon(Icons.email_outlined),
                       ),
                     ),
                     const SizedBox(height: 32),
                     Text(
-                      'Role',
+                      l10n.profileRole,
                       style: Theme.of(context)
                           .textTheme
                           .titleLarge
@@ -276,8 +277,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             children: [
                               Text(
                                 widget.userProfile['role'] == 'admin'
-                                    ? 'Team Admin'
-                                    : 'Team Member',
+                                    ? l10n.profileTeamAdmin
+                                    : l10n.profileTeamMember,
                                 style: TextStyle(
                                   color:
                                       Theme.of(context).colorScheme.onSurface,
@@ -287,8 +288,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               ),
                               Text(
                                 widget.userProfile['role'] == 'admin'
-                                    ? 'You have admin privileges'
-                                    : 'Standard team member access',
+                                    ? l10n.profileAdminPrivileges
+                                    : l10n.profileStandardAccess,
                                 style: TextStyle(
                                     color: Theme.of(context)
                                         .colorScheme

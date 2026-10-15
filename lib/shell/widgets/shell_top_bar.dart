@@ -45,10 +45,10 @@ class ShellTopBar extends StatefulWidget {
   });
 
   @override
-  State<ShellTopBar> createState() => _ShellTopBarState();
+  State<ShellTopBar> createState() => ShellTopBarState();
 }
 
-class _ShellTopBarState extends State<ShellTopBar> {
+class ShellTopBarState extends State<ShellTopBar> {
   final _supabaseService = SupabaseService();
   Map<String, dynamic>? _profile;
   List<Map<String, dynamic>> _teams = [];
@@ -83,6 +83,9 @@ class _ShellTopBarState extends State<ShellTopBar> {
       debugPrint('Error loading account for top bar: $e');
     }
   }
+
+  /// Same as pressing the refresh button; used by the R shortcut.
+  Future<void> refresh() => _refresh();
 
   Future<void> _refresh() async {
     final onRefresh = widget.onRefresh;
@@ -157,10 +160,13 @@ class _ShellTopBarState extends State<ShellTopBar> {
               ),
             ),
             if (widget.pageAction != null) ...[
-              FilledButton.icon(
-                onPressed: widget.pageAction!.onPressed,
-                icon: Icon(widget.pageAction!.icon),
-                label: Text(widget.pageAction!.label),
+              Tooltip(
+                message: '${widget.pageAction!.label} (N)',
+                child: FilledButton.icon(
+                  onPressed: widget.pageAction!.onPressed,
+                  icon: Icon(widget.pageAction!.icon),
+                  label: Text(widget.pageAction!.label),
+                ),
               ),
               const SizedBox(width: 8),
             ],
@@ -205,7 +211,7 @@ class _RefreshButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      tooltip: AppLocalizations.of(context).refresh,
+      tooltip: '${AppLocalizations.of(context).refresh} (R)',
       onPressed: isRefreshing ? null : onPressed,
       icon: isRefreshing
           ? const SizedBox(

@@ -1,3 +1,4 @@
+import 'package:ell_ena/l10n/app_localizations.dart';
 import 'package:ell_ena/models/rag_result.dart';
 import 'package:ell_ena/providers/chat/chat_controller.dart';
 import 'package:ell_ena/widgets/chat/rag_result_tile.dart';
@@ -111,7 +112,7 @@ class _ContextInsightsBody extends StatelessWidget {
                 Icon(Icons.insights, size: 20, color: Colors.green.shade400),
                 const SizedBox(width: 8),
                 Text(
-                  'Context',
+                  AppLocalizations.of(context).chatContext,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onSurface,
@@ -127,6 +128,7 @@ class _ContextInsightsBody extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (retrievalStatus == RagRetrievalStatus.loading) {
       return const Center(
         child: Padding(
@@ -140,42 +142,41 @@ class _ContextInsightsBody extends StatelessWidget {
       return _StatusMessage(
         icon: Icons.error_outline,
         iconColor: Colors.red.shade400,
-        title: 'Could not load context',
-        message: errorMessage ?? 'Try sending your message again.',
+        title: l10n.chatContextLoadError,
+        message: errorMessage ?? l10n.chatContextTryAgain,
       );
     }
 
     if (retrievalStatus == RagRetrievalStatus.idle) {
-      return const _StatusMessage(
+      return _StatusMessage(
         icon: Icons.search,
-        title: 'No context yet',
-        message: 'Send a message to find related tasks, tickets, and meetings.',
+        title: l10n.chatContextEmptyTitle,
+        message: l10n.chatContextEmptyMessage,
       );
     }
 
     if (results.isEmpty || retrievalStatus == RagRetrievalStatus.empty) {
-      return const _StatusMessage(
+      return _StatusMessage(
         icon: Icons.inbox_outlined,
-        title: 'No matches found',
-        message:
-            'Nothing in your workspace matched this message closely enough.',
+        title: l10n.chatContextNoMatchesTitle,
+        message: l10n.chatContextNoMatchesMessage,
       );
     }
 
     final grouped = groupRagResultsByType(results);
     final sections = <_InsightsSection>[
       _InsightsSection(
-        title: 'Tasks',
+        title: l10n.tasks,
         icon: Icons.task_alt,
         results: grouped[RagEntityType.task]!,
       ),
       _InsightsSection(
-        title: 'Tickets',
+        title: l10n.tickets,
         icon: Icons.confirmation_number_outlined,
         results: grouped[RagEntityType.ticket]!,
       ),
       _InsightsSection(
-        title: 'Meetings',
+        title: l10n.meetings,
         icon: Icons.event,
         results: grouped[RagEntityType.meeting]!,
       ),

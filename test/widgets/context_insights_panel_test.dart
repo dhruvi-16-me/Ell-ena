@@ -1,3 +1,4 @@
+import 'package:ell_ena/l10n/app_localizations.dart';
 import 'package:ell_ena/models/rag_result.dart';
 import 'package:ell_ena/providers/chat/chat_controller.dart';
 import 'package:ell_ena/services/rag_retriever.dart';
@@ -50,6 +51,8 @@ void main() {
     testWidgets('shows idle empty state before retrieval', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ContextInsightsBody(
               retrievalStatus: RagRetrievalStatus.idle,
@@ -66,6 +69,8 @@ void main() {
     testWidgets('shows loading indicator', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ContextInsightsBody(
               retrievalStatus: RagRetrievalStatus.loading,
@@ -81,6 +86,8 @@ void main() {
     testWidgets('shows error state', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ContextInsightsBody(
               retrievalStatus: RagRetrievalStatus.error,
@@ -98,6 +105,8 @@ void main() {
     testWidgets('shows empty retrieval state', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ContextInsightsBody(
               retrievalStatus: RagRetrievalStatus.empty,
@@ -116,6 +125,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ContextInsightsBody(
               retrievalStatus: RagRetrievalStatus.success,
@@ -189,6 +200,8 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(
               body: ContextInsightsPanel(),
             ),
@@ -212,6 +225,8 @@ void main() {
     testWidgets('shows task metadata in subtitle', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: RagResultTile(
               result: RagResult(

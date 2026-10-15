@@ -150,7 +150,7 @@ Future<void> confirmAndSignOut(BuildContext context) async {
       Navigator.pop(context); // close loader
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error logging out: $e'),
+          content: Text(l10n.commonErrorLoggingOut('$e')),
           backgroundColor: Colors.red,
         ),
       );

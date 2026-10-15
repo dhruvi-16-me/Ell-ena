@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/locale_provider.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_theme_mode.dart';
+import '../../shell/app_shell.dart';
 import '../../shell/shell_refreshable.dart';
 import '../../theme/theme_controller.dart';
 import '../../widgets/account_actions.dart';
@@ -71,7 +72,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to load profile: $e'),
+            content: Text(
+                AppLocalizations.of(context).profileFailedToLoad('$e')),
             backgroundColor: Colors.red,
           ),
         );
@@ -83,8 +85,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (_isLoading) {
-      final l10n = AppLocalizations.of(context);
       return Scaffold(
         body: Center(
           child: Column(
@@ -99,11 +101,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       );
     }
 
-    final String fullName = _userProfile?['full_name'] ?? 'User';
+    final String fullName =
+        _userProfile?['full_name'] ?? l10n.profileUserFallback;
     final String role = _userProfile?['role'] ?? 'member';
-    final String roleDisplay = role == 'admin' ? 'Team Admin' : 'Team Member';
-    final String teamName = _userProfile?['teams']?['name'] ?? 'Your Team';
+    final String roleDisplay =
+        role == 'admin' ? l10n.profileTeamAdmin : l10n.profileTeamMember;
+    final String teamName =
+        _userProfile?['teams']?['name'] ?? l10n.profileYourTeam;
     final String teamCode = _userProfile?['teams']?['team_code'] ?? '';
+
+    if (AppShell.isDesktop(context)) {
+      return _buildWideProfile(
+        fullName: fullName,
+        role: role,
+        roleDisplay: roleDisplay,
+        teamName: teamName,
+      );
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -118,7 +132,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 IconButton(
                   icon: const Icon(Icons.logout, color: Colors.white),
                   onPressed: _handleLogout,
-                  tooltip: AppLocalizations.of(context).logout,
+                  tooltip: l10n.logout,
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(
@@ -186,7 +200,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                         color: Colors.white, width: 2),
                                   ),
                                   child: Text(
-                                    role == 'admin' ? 'ADMIN' : 'MEMBER',
+                                    role == 'admin'
+                                        ? l10n.profileAdminBadge
+                                        : l10n.profileMemberBadge,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -241,6 +257,163 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Wide screens: identity card beside the same sections as the phone. The
+  /// green header and its logout are replaced by the card and the shell's
+  /// account menu.
+  Widget _buildWideProfile({
+    required String fullName,
+    required String role,
+    required String roleDisplay,
+    required String teamName,
+  }) {
+    final sections = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildTeamInfoSection(
+          teamName,
+          _userProfile?['teams']?['team_code'] ?? '',
+        ),
+        const SizedBox(height: 24),
+        _buildStatsSection(),
+        const SizedBox(height: 24),
+        _buildSettingsSection(),
+        const SizedBox(height: 24),
+        _buildPreferencesSection(),
+      ],
+    );
+    final identity = _buildIdentityCard(
+      fullName: fullName,
+      role: role,
+      roleDisplay: roleDisplay,
+      teamName: teamName,
+    );
+
+    return Scaffold(
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 900) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [identity, const SizedBox(height: 24), sections],
+                  );
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(width: 320, child: identity),
+                    const SizedBox(width: 24),
+                    Expanded(child: sections),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIdentityCard({
+    required String fullName,
+    required String role,
+    required String roleDisplay,
+    required String teamName,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              CircleAvatar(
+                radius: 44,
+                backgroundColor: colorScheme.primary.withValues(alpha: 0.15),
+                child: Icon(Icons.person, size: 44, color: colorScheme.primary),
+              ),
+              // Same role badge as the phone header.
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: role == 'admin'
+                      ? Colors.orange.shade400
+                      : Colors.blue.shade400,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colorScheme.surface, width: 2),
+                ),
+                child: Text(
+                  role == 'admin'
+                      ? l10n.profileAdminBadge
+                      : l10n.profileMemberBadge,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            fullName,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            roleDisplay,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Divider(color: colorScheme.outlineVariant),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.groups_outlined, size: 18, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  teamName,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -333,8 +506,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       builder: (context) {
         return AlertDialog(
           backgroundColor: Theme.of(context).colorScheme.surface,
-          title: const Text(
-            'Switch Team',
+          title: Text(
+            AppLocalizations.of(context).switchTeam,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           content: SizedBox(
@@ -349,7 +522,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 final colorScheme = Theme.of(context).colorScheme;
                 return ListTile(
                   title: Text(
-                    team['name'] ?? 'Team',
+                    team['name'] ??
+                        AppLocalizations.of(context).teamFallbackName,
                     style: TextStyle(
                       color: colorScheme.onSurface,
                       fontWeight:
@@ -357,7 +531,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     ),
                   ),
                   subtitle: Text(
-                    'Team Code: ${team['team_code'] ?? 'N/A'}',
+                    AppLocalizations.of(context)
+                        .teamCode(team['team_code'] ?? 'N/A'),
                     style: TextStyle(
                       color: colorScheme.onSurfaceVariant,
                       fontSize: 12,
@@ -401,6 +576,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   Future<void> _switchTeam(String teamId) async {
+    final l10n = AppLocalizations.of(context);
     try {
       setState(() {
         _isLoading = true;
@@ -415,7 +591,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Team switched successfully'),
+              content: Text(l10n.profileTeamSwitched),
               backgroundColor: Colors.green.shade600,
             ),
           );
@@ -428,7 +604,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error switching team: ${result['error']}'),
+              content: Text(l10n.errorSwitchingTeam('${result['error']}')),
               backgroundColor: Colors.red,
             ),
           );
@@ -443,7 +619,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error switching team: $e'),
+            content: Text(l10n.errorSwitchingTeam('$e')),
             backgroundColor: Colors.red,
           ),
         );
@@ -457,9 +633,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       child: ElevatedButton.icon(
         onPressed: _handleLogout,
         icon: const Icon(Icons.logout, color: Colors.white),
-        label: const Text(
-          'Logout',
-          style: TextStyle(
+        label: Text(
+          AppLocalizations.of(context).logout,
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -478,6 +654,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   Widget _buildTeamInfoSection(String teamName, String teamCode) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -498,7 +675,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Team Information',
+                l10n.profileTeamInformation,
                 style: TextStyle(
                   color: colorScheme.onSurface,
                   fontSize: 18,
@@ -517,7 +694,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Team Name',
+                    l10n.profileTeamName,
                     style: TextStyle(
                       color: colorScheme.onSurfaceVariant,
                       fontSize: 12,
@@ -545,7 +722,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Team ID',
+                      l10n.profileTeamId,
                       style: TextStyle(
                         color: colorScheme.onSurfaceVariant,
                         fontSize: 12,
@@ -572,6 +749,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   Widget _buildStatsSection() {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -591,7 +769,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Your Activity',
+                l10n.profileYourActivity,
                 style: TextStyle(
                   color: colorScheme.onSurface,
                   fontSize: 18,
@@ -615,11 +793,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatItem('Tasks\nCompleted', completed.toString(),
-                      Colors.green.shade400),
-                  _buildStatItem('Hours\nLogged', hours, Colors.blue.shade400),
+                  _buildStatItem(l10n.profileStatTasksCompleted,
+                      completed.toString(), Colors.green.shade400),
                   _buildStatItem(
-                      'Team\nProjects', projects, Colors.purple.shade400),
+                      l10n.profileStatHoursLogged, hours, Colors.blue.shade400),
+                  _buildStatItem(l10n.profileStatTeamProjects, projects,
+                      Colors.purple.shade400),
                 ],
               );
             },
@@ -663,14 +842,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget _buildSettingsSection() {
     final bool isAdmin = _userProfile?['role'] == 'admin';
     final String teamId = _userProfile?['teams']?['team_code'] ?? '';
-    final String teamName = _userProfile?['teams']?['name'] ?? 'Your Team';
+    final l10n = AppLocalizations.of(context);
+    final String teamName =
+        _userProfile?['teams']?['name'] ?? l10n.profileYourTeam;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AppLocalizations.of(context).settings,
+          l10n.settings,
           style: TextStyle(
             color: colorScheme.onSurface,
             fontSize: 20,
@@ -686,8 +867,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             children: [
               _buildSettingItem(
                 icon: Icons.person_outline,
-                title: 'Edit Profile',
-                subtitle: 'Update your personal information',
+                title: l10n.profileEditProfile,
+                subtitle: l10n.profileEditProfileSubtitle,
                 iconColor: Colors.blue.shade400,
                 onTap: () {
                   Navigator.push(
@@ -706,15 +887,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               const Divider(color: Colors.grey),
               _buildSettingItem(
                 icon: Icons.notifications_outlined,
-                title: 'Notifications',
-                subtitle: 'Manage your notification preferences',
+                title: l10n.profileNotifications,
+                subtitle: l10n.profileNotificationsSubtitle,
                 iconColor: Colors.orange.shade400,
               ),
               const Divider(color: Colors.grey),
               _buildSettingItem(
                 icon: Icons.security_outlined,
-                title: 'Security',
-                subtitle: 'Configure security settings',
+                title: l10n.profileSecurity,
+                subtitle: l10n.profileSecuritySubtitle,
                 iconColor: Colors.green.shade400,
               ),
               const Divider(color: Colors.grey),
@@ -724,8 +905,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 const Divider(color: Colors.grey),
                 _buildSettingItem(
                   icon: Icons.swap_horiz,
-                  title: 'Switch Team',
-                  subtitle: 'Change to another team',
+                  title: l10n.switchTeam,
+                  subtitle: l10n.profileSwitchTeamSubtitle,
                   iconColor: Colors.purple.shade400,
                   onTap: _showTeamSwitcher,
                 ),
@@ -735,8 +916,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 const Divider(color: Colors.grey),
                 _buildSettingItem(
                   icon: Icons.people_outline,
-                  title: 'Team Members',
-                  subtitle: 'Manage your team members',
+                  title: l10n.profileTeamMembers,
+                  subtitle: l10n.profileTeamMembersSubtitle,
                   iconColor: Colors.purple.shade400,
                   onTap: () {
                     Navigator.push(
@@ -759,13 +940,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   String _themeModeLabel(AppThemeMode mode) {
+    final l10n = AppLocalizations.of(context);
     switch (mode) {
       case AppThemeMode.light:
-        return 'Light';
+        return l10n.profileThemeLight;
       case AppThemeMode.dark:
-        return 'Dark';
+        return l10n.profileThemeDark;
       case AppThemeMode.system:
-        return 'System';
+        return l10n.profileThemeSystem;
     }
   }
 
@@ -811,7 +993,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Preferences',
+              AppLocalizations.of(context).profilePreferences,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 20,
@@ -831,7 +1013,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   Divider(color: Theme.of(context).colorScheme.outlineVariant),
                   _buildPreferenceItem(
                     icon: Icons.notifications_active_outlined,
-                    title: 'Push Notifications',
+                    title:
+                        AppLocalizations.of(context).profilePushNotifications,
                     isSwitch: true,
                     iconColor: Colors.red.shade400,
                   ),
@@ -857,7 +1040,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         child: Icon(Icons.dark_mode_outlined, color: Colors.purple.shade400),
       ),
       title: Text(
-        'Theme',
+        AppLocalizations.of(context).profileTheme,
         style: TextStyle(
           color: Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.bold,

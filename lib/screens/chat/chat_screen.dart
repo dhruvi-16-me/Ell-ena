@@ -13,6 +13,7 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import '../tasks/task_detail_screen.dart';
 import '../tickets/ticket_detail_screen.dart';
 import '../meetings/meeting_detail_screen.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -144,6 +145,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   // Build the listening animation dialog
   Widget _buildListeningDialog() {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -226,7 +228,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             ),
             const SizedBox(height: 20),
             Text(
-              'Listening...',
+              l10n.chatListening,
               style: TextStyle(
                 color: colorScheme.onSurface,
                 fontSize: 18,
@@ -235,7 +237,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             ),
             const SizedBox(height: 10),
             Text(
-              'Tap anywhere to cancel',
+              l10n.chatTapToCancel,
               style: TextStyle(
                 color: colorScheme.onSurfaceVariant,
                 fontSize: 12,
@@ -1001,8 +1003,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void _navigateToRagResult(RagResult result) {
     if (result.entityId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open this item. Details missing.'),
+        SnackBar(
+          content:
+              Text(AppLocalizations.of(context).chatCouldNotOpenItemDetails),
           backgroundColor: Colors.red,
         ),
       );
@@ -1037,8 +1040,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         break;
       case RagEntityType.unknown:
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open this item.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).chatCouldNotOpenItem),
             backgroundColor: Colors.red,
           ),
         );
@@ -1098,8 +1101,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       } else {
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not navigate to the item. Details missing.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).chatCouldNotNavigate),
             backgroundColor: Colors.red,
           ),
         );
@@ -1108,7 +1111,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       debugPrint('Error navigating to item: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Navigation error: $e'),
+          content: Text(AppLocalizations.of(context).chatNavigationError('$e')),
           backgroundColor: Colors.red,
         ),
       );
@@ -1118,8 +1121,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   Future<void> _toggleListening() async {
     if (!_speechAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Speech recognition not available on this device')),
+        SnackBar(
+            content: Text(AppLocalizations.of(context).chatSpeechNotAvailable)),
       );
       return;
     }
@@ -1203,6 +1206,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     required ColorScheme colorScheme,
     required bool showInsightsAction,
   }) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         Container(
@@ -1236,7 +1240,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Chat with Ell-ena',
+                      l10n.chatTitle,
                       style: TextStyle(
                         color: colorScheme.onSurface,
                         fontSize: 18,
@@ -1244,7 +1248,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                       ),
                     ),
                     Text(
-                      'Your AI Assistant',
+                      l10n.chatSubtitle,
                       style: TextStyle(
                           color: colorScheme.onSurfaceVariant, fontSize: 14),
                     ),
@@ -1253,7 +1257,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 const Spacer(),
                 if (showInsightsAction)
                   IconButton(
-                    tooltip: 'Context',
+                    tooltip: l10n.chatContext,
                     onPressed: _showMobileInsightsSheet,
                     icon: Icon(
                       Icons.insights_outlined,
@@ -1289,7 +1293,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Start a conversation with Ell-ena',
+                        l10n.chatEmptyState,
                         style: TextStyle(
                           color: colorScheme.onSurfaceVariant,
                           fontSize: 16,
@@ -1355,7 +1359,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                     controller: _messageController,
                     style: TextStyle(color: colorScheme.onSurface),
                     decoration: InputDecoration(
-                      hintText: 'Type your message...',
+                      hintText: l10n.chatInputHint,
                       hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                       border: InputBorder.none,
                     ),
@@ -1377,6 +1381,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   ],
                 ),
                 child: IconButton(
+                  tooltip: _isListening
+                      ? l10n.chatStopListeningTooltip
+                      : l10n.chatVoiceInputTooltip,
                   onPressed: _toggleListening,
                   icon: Icon(_isListening ? Icons.stop : Icons.mic),
                   color: Colors.white,
@@ -1396,6 +1403,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   ],
                 ),
                 child: IconButton(
+                  tooltip: l10n.chatSendTooltip,
                   onPressed: isProcessing ? null : _sendMessage,
                   icon: const Icon(Icons.send),
                   color: Colors.white,
@@ -1614,25 +1622,26 @@ class _ItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Set icon and title based on card type
+    final l10n = AppLocalizations.of(context);
     IconData icon;
     String title;
 
     switch (message.cardType) {
       case 'task':
         icon = Icons.task_alt;
-        title = 'New Task';
+        title = l10n.newTask;
         break;
       case 'ticket':
         icon = Icons.confirmation_number;
-        title = 'New Ticket';
+        title = l10n.newTicket;
         break;
       case 'meeting':
         icon = Icons.calendar_today;
-        title = 'New Meeting';
+        title = l10n.newMeeting;
         break;
       default:
         icon = Icons.check_circle;
-        title = 'Item Created';
+        title = l10n.chatItemCreated;
     }
 
     final colorScheme = Theme.of(context).colorScheme;
@@ -1669,7 +1678,7 @@ class _ItemCard extends StatelessWidget {
                 const Spacer(),
                 if (message.cardType == 'task' || message.cardType == 'ticket')
                   Text(
-                    'Created just now',
+                    l10n.chatCreatedJustNow,
                     style: TextStyle(
                         color: colorScheme.onSurfaceVariant, fontSize: 12),
                   ),
@@ -1709,7 +1718,7 @@ class _ItemCard extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'View ${message.cardType?.capitalize() ?? 'Item'}',
+                            _viewLabel(l10n),
                             style: const TextStyle(
                               color: Colors.green,
                               fontWeight: FontWeight.bold,
@@ -1732,6 +1741,21 @@ class _ItemCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _viewLabel(AppLocalizations l10n) {
+    switch (message.cardType) {
+      case 'task':
+        return l10n.chatViewTask;
+      case 'ticket':
+        return l10n.chatViewTicket;
+      case 'meeting':
+        return l10n.chatViewMeeting;
+      case null:
+        return l10n.chatViewItem;
+      default:
+        return 'View ${message.cardType!.capitalize()}';
+    }
   }
 
   String _formatDate(String? dateString) {

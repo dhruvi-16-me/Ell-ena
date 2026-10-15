@@ -1,3 +1,4 @@
+import 'package:ell_ena/l10n/app_localizations.dart';
 import 'package:ell_ena/models/rag_result.dart';
 import 'package:ell_ena/services/ai_context_builder.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ class RagResultTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final subtitle = _subtitle(AppLocalizations.of(context));
 
     return Material(
       color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
@@ -48,10 +50,10 @@ class RagResultTile extends StatelessWidget {
                         color: colorScheme.onSurface,
                       ),
                     ),
-                    if (_subtitle().isNotEmpty) ...[
+                    if (subtitle.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
-                        _subtitle(),
+                        subtitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -75,7 +77,7 @@ class RagResultTile extends StatelessWidget {
     );
   }
 
-  String _subtitle() {
+  String _subtitle(AppLocalizations l10n) {
     final parts = <String>[];
     switch (result.entityType) {
       case RagEntityType.task:
@@ -83,7 +85,7 @@ class RagResultTile extends StatelessWidget {
           parts.add(AiContextBuilder.formatStatusLabel(result.status!));
         }
         if (result.dueDate != null) {
-          parts.add('Due ${_formatDate(result.dueDate!)}');
+          parts.add(l10n.chatResultDue(_formatDate(result.dueDate!)));
         }
         break;
       case RagEntityType.ticket:
