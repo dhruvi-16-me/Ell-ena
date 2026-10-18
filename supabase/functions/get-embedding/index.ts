@@ -18,7 +18,7 @@ serve(async (req) => {
       throw new Error("No text provided for embedding");
     }
 
-    // Generate embedding using Gemini (aligned with generate-embeddings / vector(768))
+    // Same model and size as generate-embeddings, with the query task type.
     const embeddingResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=" + GEMINI_API_KEY, {
       method: "POST",
       headers: {
