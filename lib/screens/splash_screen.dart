@@ -174,6 +174,19 @@ class _SplashScreenState extends State<SplashScreen>
           ),
         ),
       ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Image.asset(
+              'ELL-ena-logo/png/aossie-logo.png',
+              height: 56,
+              semanticLabel: 'AOSSIE',
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

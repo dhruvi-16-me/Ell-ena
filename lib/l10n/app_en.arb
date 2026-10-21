@@ -2358,5 +2358,9 @@
   "ticketCreateGithubIssueSubtitle": "Sync this ticket to the configured GitHub repository",
   "@ticketCreateGithubIssueSubtitle": {
     "description": "Subtitle of the create-GitHub-issue switch."
+  },
+  "shellSupportUs": "Support Us",
+  "@shellSupportUs": {
+    "description": "Desktop sidebar action that opens the AOSSIE support panel."
   }
 }

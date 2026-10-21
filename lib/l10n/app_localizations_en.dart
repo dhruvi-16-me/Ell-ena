@@ -1702,4 +1702,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get ticketCreateGithubIssueSubtitle =>
       'Sync this ticket to the configured GitHub repository';
+
+  @override
+  String get shellSupportUs => 'Support Us';
 }

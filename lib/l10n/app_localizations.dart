@@ -3121,6 +3121,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sync this ticket to the configured GitHub repository'**
   String get ticketCreateGithubIssueSubtitle;
+
+  /// Desktop sidebar action that opens the AOSSIE support panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Us'**
+  String get shellSupportUs;
 }
 
 class _AppLocalizationsDelegate

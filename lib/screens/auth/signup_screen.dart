@@ -384,6 +384,7 @@ class _SignupScreenState extends State<SignupScreen>
     return AuthScreenWrapper(
       title: l10n.authCreateAccount,
       subtitle: l10n.authSignUpSubtitle,
+      centerOnWideScreens: true,
       children: [
         TabBar(
           controller: _tabController,

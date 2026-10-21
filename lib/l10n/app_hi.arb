@@ -503,5 +503,6 @@
   "ticketSelectTeamMember": "टीम सदस्य चुनें",
   "ticketUnassigned": "असाइन नहीं किया गया",
   "ticketCreateGithubIssue": "GitHub इश्यू बनाएं",
-  "ticketCreateGithubIssueSubtitle": "इस टिकट को कॉन्फ़िगर की गई GitHub रिपॉज़िटरी में सिंक करें"
+  "ticketCreateGithubIssueSubtitle": "इस टिकट को कॉन्फ़िगर की गई GitHub रिपॉज़िटरी में सिंक करें",
+  "shellSupportUs": "हमें सपोर्ट करें"
 }

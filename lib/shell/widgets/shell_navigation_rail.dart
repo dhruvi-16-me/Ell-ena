@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../widgets/support_us_panel.dart';
 import '../shell_destination.dart';
 
 /// Fixed-width sidebar aligned with Figma shell (~288px).
@@ -32,21 +35,10 @@ class ShellNavigationRail extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(24, 22, 24, 16),
               child: Row(
                 children: [
-                  Container(
+                  SvgPicture.asset(
+                    'web/favicon.svg',
                     width: 48,
                     height: 48,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      'E',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                   ),
                   const SizedBox(width: 12),
                   Text(
@@ -81,6 +73,13 @@ class ShellNavigationRail extends StatelessWidget {
                 ],
               ),
             ),
+            if (kIsWeb)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+                child: _SupportUsNavItem(
+                  onTap: () => openSupportUs(context),
+                ),
+              ),
           ],
         ),
       ),
@@ -138,6 +137,48 @@ class _ShellNavItem extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SupportUsNavItem extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _SupportUsNavItem({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          child: Row(
+            children: [
+              Icon(
+                Icons.volunteer_activism_outlined,
+                size: 24,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                l10n.shellSupportUs,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         ),
       ),

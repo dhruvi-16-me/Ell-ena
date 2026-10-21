@@ -1706,4 +1706,7 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get ticketCreateGithubIssueSubtitle =>
       'इस टिकट को कॉन्फ़िगर की गई GitHub रिपॉज़िटरी में सिंक करें';
+
+  @override
+  String get shellSupportUs => 'हमें सपोर्ट करें';
 }

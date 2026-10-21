@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shell/app_shell.dart';
 import '../../widgets/custom_widgets.dart';
+import '../../widgets/social_share_button.dart';
 import '../../services/navigation_service.dart';
 import '../../services/supabase_service.dart';
 import '../home/home_screen.dart';
@@ -169,6 +172,7 @@ class _LoginScreenState extends State<LoginScreen>
     return AuthScreenWrapper(
       title: l10n.authWelcomeBack,
       subtitle: l10n.authSignInSubtitle,
+      centerOnWideScreens: true,
       children: [
         FadeTransition(
           opacity: _fadeAnimation,
@@ -308,12 +312,41 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ],
                   ),
+                  if (AppShell.isDesktop(context)) ...[
+                    const SocialShareSlot(),
+                    const _AossieMark(),
+                  ],
                 ],
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Wide layout only. The phone login screen does not build this.
+class _AossieMark extends StatelessWidget {
+  const _AossieMark();
+
+  static final Uri _site = Uri.parse('https://aossie.org');
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 40),
+      child: Center(
+        child: InkWell(
+          onTap: () => launchUrl(_site, mode: LaunchMode.externalApplication),
+          borderRadius: BorderRadius.circular(8),
+          child: Image.asset(
+            'ELL-ena-logo/png/aossie-logo.png',
+            height: 64,
+            semanticLabel: 'AOSSIE',
+          ),
+        ),
+      ),
     );
   }
 }
