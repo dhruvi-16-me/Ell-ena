@@ -10,19 +10,20 @@ import 'create_task_screen.dart';
 
 class TaskScreen extends StatefulWidget {
   // Create a static key that can be used to access the state
-  static final GlobalKey<_TaskScreenState> globalKey =
+  static final GlobalKey<_TaskScreenState> _globalKey =
       GlobalKey<_TaskScreenState>();
+  static GlobalKey<State<TaskScreen>> get globalKey => _globalKey;
 
-  const TaskScreen({Key? key}) : super(key: key);
+  const TaskScreen({super.key});
 
   // Static method to refresh tasks from anywhere
   static void refreshTasks() {
-    globalKey.currentState?.refreshTasks();
+    _globalKey.currentState?.refreshTasks();
   }
 
   /// Opens the create-task screen; used by the wide shell's top bar.
   static void openCreateTask() {
-    globalKey.currentState?._openCreateTask();
+    _globalKey.currentState?._openCreateTask();
   }
 
   @override
@@ -118,6 +119,7 @@ class _TaskScreenState extends State<TaskScreen> {
       _loadTasks();
     } catch (e) {
       debugPrint('Error updating task status: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.taskErrorUpdatingStatus(e.toString())),
@@ -139,6 +141,7 @@ class _TaskScreenState extends State<TaskScreen> {
       _loadTasks();
     } catch (e) {
       debugPrint('Error updating task approval: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.taskErrorUpdatingApproval(e.toString())),
@@ -158,6 +161,7 @@ class _TaskScreenState extends State<TaskScreen> {
 
     if (result == true) {
       _loadTasks();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.taskCreatedSuccess),
@@ -295,12 +299,9 @@ class _TaskScreenState extends State<TaskScreen> {
               : MediaQuery.of(context).size.width - 32;
           return ReorderableListView.builder(
             itemCount: filteredTasks.length,
-            onReorder: (oldIndex, newIndex) {
+            onReorderItem: (oldIndex, newIndex) {
               // Just for visual reordering, no status change
               setState(() {
-                if (oldIndex < newIndex) {
-                  newIndex -= 1;
-                }
                 final item = filteredTasks.removeAt(oldIndex);
                 filteredTasks.insert(newIndex, item);
               });
@@ -464,9 +465,9 @@ class _TaskScreenState extends State<TaskScreen> {
                 return Container(
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? color.withOpacity(0.2)
+                        ? color.withValues(alpha: 0.2)
                         : candidateData.isNotEmpty
-                            ? color.withOpacity(0.1)
+                            ? color.withValues(alpha: 0.1)
                             : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
@@ -493,13 +494,14 @@ class _TaskScreenState extends State<TaskScreen> {
                   ),
                 );
               },
-              onAccept: (task) {
+              onAcceptWithDetails: (details) {
+                final task = details.data;
                 final newStatus = status['id'] as String;
                 if (task['status'] != newStatus) {
                   _updateTaskStatus(task['id'], newStatus);
                 }
               },
-              onWillAccept: (data) => data != null,
+              onWillAcceptWithDetails: (details) => true,
             ),
           );
         }).toList(),
@@ -785,7 +787,8 @@ class _TaskCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+              color:
+                  Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -797,7 +800,7 @@ class _TaskCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -920,7 +923,7 @@ class _TaskCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: approvalColor.withOpacity(0.1),
+                          color: approvalColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(

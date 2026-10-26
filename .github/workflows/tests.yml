@@ -26,16 +26,11 @@ jobs:
           channel: stable
           cache: true
 
-      # `.env` is a bundled asset, so the build needs the file. Tests replace
-      # its contents with fake values; no secrets are used.
-      - name: Create .env
-        run: cp .env.example .env
-
       - run: flutter pub get
 
-      # Fails on errors only, until the existing warnings and infos are fixed.
+      # Fails on any error, warning, or info.
       - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        run: flutter analyze --fatal-infos
 
       - name: Test
         run: flutter test --coverage

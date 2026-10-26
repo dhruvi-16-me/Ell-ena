@@ -20,7 +20,7 @@ class CustomTextField extends StatelessWidget {
   final bool? isPassword;
 
   const CustomTextField({
-    Key? key,
+    super.key,
     required this.controller,
     this.hintText = '',
     this.prefixIcon,
@@ -32,7 +32,7 @@ class CustomTextField extends StatelessWidget {
     this.label,
     this.icon,
     this.isPassword,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -89,12 +89,12 @@ class CustomButton extends StatelessWidget {
   final bool isLoading;
 
   const CustomButton({
-    Key? key,
+    super.key,
     required this.text,
     this.onPressed,
     this.isOutlined = false,
     this.isLoading = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -147,12 +147,12 @@ class AuthScreenWrapper extends StatelessWidget {
   final bool centerOnWideScreens;
 
   const AuthScreenWrapper({
-    Key? key,
+    super.key,
     required this.title,
     required this.subtitle,
     required this.children,
     this.centerOnWideScreens = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -247,10 +247,10 @@ class CustomLoading extends StatelessWidget {
   final Color color;
 
   const CustomLoading({
-    Key? key,
+    super.key,
     this.size = 40.0,
     this.color = Colors.green,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +265,7 @@ class CustomLoading extends StatelessWidget {
 
 // Dashboard Loading Skeleton
 class DashboardLoadingSkeleton extends StatelessWidget {
-  const DashboardLoadingSkeleton({Key? key}) : super(key: key);
+  const DashboardLoadingSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -454,7 +454,7 @@ class DashboardLoadingSkeleton extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.2),
+              color: Colors.green.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.task_alt, color: Colors.green),
@@ -485,7 +485,7 @@ class DashboardLoadingSkeleton extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.2),
+              color: Colors.orange.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Text(
@@ -565,7 +565,7 @@ class DashboardLoadingSkeleton extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -648,7 +648,7 @@ class DashboardLoadingSkeleton extends StatelessWidget {
 
 // Workspace Loading Skeleton
 class WorkspaceLoadingSkeleton extends StatelessWidget {
-  const WorkspaceLoadingSkeleton({Key? key}) : super(key: key);
+  const WorkspaceLoadingSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -700,7 +700,7 @@ class WorkspaceLoadingSkeleton extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
+                        color: Colors.green.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Row(
@@ -782,7 +782,7 @@ class WorkspaceLoadingSkeleton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.green.withOpacity(0.2) : cardColor,
+          color: isSelected ? Colors.green.withValues(alpha: 0.2) : cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.center,
@@ -814,7 +814,7 @@ class WorkspaceLoadingSkeleton extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.2),
+                  color: Colors.blue.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
@@ -829,7 +829,7 @@ class WorkspaceLoadingSkeleton extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.2),
+                  color: Colors.orange.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
@@ -886,7 +886,7 @@ class WorkspaceLoadingSkeleton extends StatelessWidget {
 
 // Calendar Loading Skeleton
 class CalendarLoadingSkeleton extends StatelessWidget {
-  const CalendarLoadingSkeleton({Key? key}) : super(key: key);
+  const CalendarLoadingSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -995,7 +995,7 @@ class CalendarLoadingSkeleton extends StatelessWidget {
                               height: 36,
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? Colors.green.withOpacity(0.2)
+                                    ? Colors.green.withValues(alpha: 0.2)
                                     : Colors.transparent,
                                 shape: BoxShape.circle,
                               ),
@@ -1096,14 +1096,14 @@ class CalendarLoadingSkeleton extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: eventColor.withOpacity(0.3), width: 1),
+        border: Border.all(color: eventColor.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: eventColor.withOpacity(0.2),
+              color: eventColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(eventIcon, color: eventColor, size: 16),

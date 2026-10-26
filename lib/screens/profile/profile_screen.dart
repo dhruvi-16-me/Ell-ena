@@ -149,7 +149,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       // Dot pattern background
                       CustomPaint(
                         painter: DotPatternPainter(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                         ),
                         size: MediaQuery.of(context).size,
                       ),
@@ -174,7 +174,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                         color: Theme.of(context)
                                             .colorScheme
                                             .shadow
-                                            .withOpacity(0.2),
+                                            .withValues(alpha: 0.2),
                                         blurRadius: 10,
                                         offset: const Offset(0, 5),
                                       ),
@@ -474,7 +474,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.blue.shade400.withOpacity(0.1),
+          color: Colors.blue.shade400.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(Icons.language_outlined, color: Colors.blue.shade400),
@@ -662,7 +662,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
+            color: colorScheme.shadow.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -757,7 +757,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
+            color: colorScheme.shadow.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -814,7 +814,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Text(
@@ -1034,7 +1034,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.purple.shade400.withOpacity(0.1),
+          color: Colors.purple.shade400.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(Icons.dark_mode_outlined, color: Colors.purple.shade400),
@@ -1070,7 +1070,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
+          color: iconColor.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: iconColor),
@@ -1105,7 +1105,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
+          color: iconColor.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: iconColor),
@@ -1127,7 +1127,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               onChanged: (value) {
                 // TODO: Implement preference toggle
               },
-              activeColor: Colors.green.shade400,
+              activeThumbColor: Colors.green.shade400,
             )
           : Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant),
       onTap: isSwitch ? null : () {/* TODO: Implement preference navigation */},

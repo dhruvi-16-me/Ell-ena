@@ -354,7 +354,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.orange.shade400
-                                              .withOpacity(0.2),
+                                              .withValues(alpha: 0.2),
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
@@ -370,7 +370,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                   ],
                                 ),
                               );
-                            }).toList(),
+                            }),
                           ],
                           onChanged: (value) {
                             setState(() {

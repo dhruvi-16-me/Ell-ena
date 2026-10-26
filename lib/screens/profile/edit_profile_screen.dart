@@ -7,10 +7,10 @@ class EditProfileScreen extends StatefulWidget {
   final VoidCallback onProfileUpdated;
 
   const EditProfileScreen({
-    Key? key,
+    super.key,
     required this.userProfile,
     required this.onProfileUpdated,
-  }) : super(key: key);
+  });
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -26,7 +26,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _emailController;
 
   String? _fullName;
-  String? _email;
 
   @override
   void initState() {
@@ -43,7 +42,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         TextEditingController(text: widget.userProfile['email'] ?? '');
 
     _fullName = widget.userProfile['full_name'];
-    _email = widget.userProfile['email'];
   }
 
   @override
@@ -171,7 +169,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   color: Theme.of(context)
                                       .colorScheme
                                       .shadow
-                                      .withOpacity(0.2),
+                                      .withValues(alpha: 0.2),
                                   blurRadius: 10,
                                   offset: const Offset(0, 5),
                                 ),
@@ -258,8 +256,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: widget.userProfile['role'] == 'admin'
-                                  ? Colors.orange.withOpacity(0.1)
-                                  : Colors.blue.withOpacity(0.1),
+                                  ? Colors.orange.withValues(alpha: 0.1)
+                                  : Colors.blue.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(

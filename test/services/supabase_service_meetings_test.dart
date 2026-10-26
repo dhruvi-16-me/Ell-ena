@@ -155,7 +155,7 @@ void main() {
         meetingDate: date,
         meetingUrl: 'https://meet.example.com/new',
         transcription: 'hello',
-        ai_summary: '{"overall_summary":"ok"}',
+        aiSummary: '{"overall_summary":"ok"}',
         durationMinutes: 45,
       );
 

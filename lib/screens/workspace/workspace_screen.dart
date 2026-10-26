@@ -6,7 +6,6 @@ import '../tickets/create_ticket_screen.dart';
 import '../../l10n/app_localizations.dart';
 import '../meetings/meeting_screen.dart';
 import '../meetings/create_meeting_screen.dart';
-import '../chat/chat_screen.dart';
 import '../../services/supabase_service.dart';
 import '../../widgets/custom_widgets.dart';
 
@@ -27,9 +26,6 @@ class WorkspaceScreen extends StatefulWidget {
 class _WorkspaceScreenState extends State<WorkspaceScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  DateTime? _selectedDate;
-  TimeOfDay? _selectedTime;
-  String? _selectedPriority;
   bool _isLoading = true;
 
   @override
@@ -105,6 +101,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
         // Force refresh of the task screen
         TaskScreen.refreshTasks();
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.workspaceTaskCreated),
@@ -132,6 +129,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
         // Force refresh of the ticket screen
         TicketScreen.refreshTickets();
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.workspaceTicketCreated),
@@ -159,6 +157,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
         // Force refresh of the meeting screen
         MeetingScreen.refreshMeetings();
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.workspaceMeetingCreated),

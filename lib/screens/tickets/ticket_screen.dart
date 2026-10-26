@@ -9,19 +9,20 @@ import 'ticket_detail_screen.dart';
 import 'create_ticket_screen.dart';
 
 class TicketScreen extends StatefulWidget {
-  static final GlobalKey<_TicketScreenState> globalKey =
+  static final GlobalKey<_TicketScreenState> _globalKey =
       GlobalKey<_TicketScreenState>();
+  static GlobalKey<State<TicketScreen>> get globalKey => _globalKey;
 
   const TicketScreen({super.key});
 
   // Static method to refresh tickets from anywhere
   /// Opens the create-ticket screen; used by the wide shell's top bar.
   static void openCreateTicket() {
-    globalKey.currentState?._openCreateTicket();
+    _globalKey.currentState?._openCreateTicket();
   }
 
   static void refreshTickets() {
-    final state = globalKey.currentState;
+    final state = _globalKey.currentState;
     if (state != null) {
       state.refreshTickets();
     }
@@ -152,6 +153,7 @@ class _TicketScreenState extends State<TicketScreen> {
 
     if (result == true) {
       refreshTickets();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.ticketCreatedSuccess),
@@ -401,9 +403,9 @@ class _TicketScreenState extends State<TicketScreen> {
                 return Container(
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? color.withOpacity(0.2)
+                        ? color.withValues(alpha: 0.2)
                         : candidateData.isNotEmpty
-                            ? color.withOpacity(0.1)
+                            ? color.withValues(alpha: 0.1)
                             : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
@@ -430,13 +432,14 @@ class _TicketScreenState extends State<TicketScreen> {
                   ),
                 );
               },
-              onAccept: (ticket) {
+              onAcceptWithDetails: (details) {
+                final ticket = details.data;
                 final newStatus = status['id'] as String;
                 if (ticket['status'] != newStatus) {
                   _updateTicketStatus(ticket['id'], newStatus);
                 }
               },
-              onWillAccept: (data) => data != null,
+              onWillAcceptWithDetails: (details) => true,
             ),
           );
         }).toList(),
@@ -503,12 +506,9 @@ class _TicketScreenState extends State<TicketScreen> {
               : MediaQuery.of(context).size.width - 32;
           return ReorderableListView.builder(
             itemCount: filteredTickets.length,
-            onReorder: (oldIndex, newIndex) {
+            onReorderItem: (oldIndex, newIndex) {
               // Just for visual reordering, no status change
               setState(() {
-                if (oldIndex < newIndex) {
-                  newIndex -= 1;
-                }
                 final item = filteredTickets.removeAt(oldIndex);
                 filteredTickets.insert(newIndex, item);
               });
@@ -713,7 +713,6 @@ class _TicketCard extends StatelessWidget {
         ticket['description'] ?? l10n.ticketNoDescription;
     // Limit description to 75 words
     final String limitedDescription = _limitWords(description, 75);
-    final String status = ticket['status'] ?? 'open';
     final String priority = ticket['priority'] ?? 'medium';
     final String category = ticket['category'] ?? 'Bug';
     final String approvalStatus = ticket['approval_status'] ?? 'pending';
@@ -816,7 +815,8 @@ class _TicketCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+              color:
+                  Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -828,7 +828,7 @@ class _TicketCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: priorityColor.withOpacity(0.1),
+                color: priorityColor.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -952,7 +952,7 @@ class _TicketCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: approvalColor.withOpacity(0.1),
+                          color: approvalColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -983,7 +983,7 @@ class _TicketCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.purple.withOpacity(0.2),
+                          color: Colors.purple.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(

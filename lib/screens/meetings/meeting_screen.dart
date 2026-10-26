@@ -12,18 +12,18 @@ import 'meeting_detail_screen.dart';
 import 'meeting_insights_screen.dart';
 
 class MeetingScreen extends StatefulWidget {
-  static final GlobalKey<_MeetingScreenState> globalKey =
+  static final GlobalKey<State<MeetingScreen>> globalKey =
       GlobalKey<_MeetingScreenState>();
 
-  const MeetingScreen({Key? key}) : super(key: key);
+  const MeetingScreen({super.key});
 
   static void refreshMeetings() {
-    globalKey.currentState?._loadInitialData();
+    (globalKey.currentState as _MeetingScreenState?)?._loadInitialData();
   }
 
   /// Opens the create-meeting screen; used by the wide shell's top bar.
   static void openCreateMeeting() {
-    globalKey.currentState?._openCreateMeeting();
+    (globalKey.currentState as _MeetingScreenState?)?._openCreateMeeting();
   }
 
   @override
@@ -315,7 +315,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
       children: [
         CircleAvatar(
           radius: 22,
-          backgroundColor: color.withOpacity(0.2),
+          backgroundColor: color.withValues(alpha: 0.2),
           child: Icon(
             icon,
             color: color,
@@ -364,8 +364,9 @@ class _MeetingScreenState extends State<MeetingScreen> {
               child: Container(
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color:
-                      isSelected ? color.withOpacity(0.2) : Colors.transparent,
+                  color: isSelected
+                      ? color.withValues(alpha: 0.2)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isSelected ? color : Colors.transparent,
@@ -612,7 +613,7 @@ class _MeetingCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.green.shade400.withOpacity(0.2),
+                color: Colors.green.shade400.withValues(alpha: 0.2),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),

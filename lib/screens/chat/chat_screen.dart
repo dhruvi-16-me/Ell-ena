@@ -158,7 +158,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withOpacity(0.3),
+              color: colorScheme.shadow.withValues(alpha: 0.3),
               blurRadius: 10,
               spreadRadius: 2,
             ),
@@ -180,7 +180,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                       width: 100,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.green.withOpacity(0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                       ),
                       child: Stack(
                         alignment: Alignment.center,
@@ -191,8 +191,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                             height: 100 * _waveformController.value,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.green.withOpacity(
-                                  0.2 * (1 - _waveformController.value)),
+                              color: Colors.green.withValues(
+                                  alpha: 0.2 * (1 - _waveformController.value)),
                             ),
                           ),
                           // Middle ripple
@@ -201,8 +201,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                             height: 70 * _waveformController.value,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.green.withOpacity(
-                                  0.3 * (1 - _waveformController.value)),
+                              color: Colors.green.withValues(
+                                  alpha: 0.3 * (1 - _waveformController.value)),
                             ),
                           ),
                           // Inner circle with mic icon
@@ -850,8 +850,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       if (title != null) updateData['title'] = title;
       if (description != null) updateData['description'] = description;
       if (status != null) updateData['status'] = status;
-      if (assignedToUserId != null)
+      if (assignedToUserId != null) {
         updateData['assigned_to'] = assignedToUserId;
+      }
 
       // Add type-specific fields
       switch (itemType) {
@@ -1154,9 +1155,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           _messageController.text = result.recognizedWords;
         });
       },
-      listenMode: stt.ListenMode.dictation,
-      partialResults: true,
-      cancelOnError: true,
+      listenOptions: stt.SpeechListenOptions(
+        listenMode: stt.ListenMode.dictation,
+        partialResults: true,
+        cancelOnError: true,
+      ),
       onSoundLevelChange: (level) {
         // You can use this to update animation intensity if needed
       },
@@ -1215,7 +1218,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             color: colorScheme.surface,
             boxShadow: [
               BoxShadow(
-                color: colorScheme.shadow.withOpacity(0.2),
+                color: colorScheme.shadow.withValues(alpha: 0.2),
                 offset: const Offset(0, 2),
                 blurRadius: 4,
               ),
@@ -1229,7 +1232,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.2),
+                    color: Colors.green.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.smart_toy, color: Colors.green),
@@ -1267,7 +1270,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -1315,7 +1318,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
-                            color: colorScheme.surfaceVariant,
+                            color: colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: LoadingAnimationWidget.staggeredDotsWave(
@@ -1352,7 +1355,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant,
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(24),
                   ),
                   child: TextField(
@@ -1374,7 +1377,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.green.withOpacity(0.3),
+                      color: Colors.green.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -1396,7 +1399,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.green.withOpacity(0.3),
+                      color: Colors.green.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -1428,7 +1431,7 @@ class _ChatBubble extends StatelessWidget {
     final bubbleTextColor =
         message.isUser ? Colors.white : colorScheme.onSurface;
     final bubbleColor =
-        message.isUser ? Colors.green : colorScheme.surfaceVariant;
+        message.isUser ? Colors.green : colorScheme.surfaceContainerHighest;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Row(
@@ -1595,7 +1598,9 @@ class _ChatBubble extends StatelessWidget {
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: isUser ? Colors.green.shade700 : colorScheme.surfaceVariant,
+        color: isUser
+            ? Colors.green.shade700
+            : colorScheme.surfaceContainerHighest,
         shape: BoxShape.circle,
         border: Border.all(
           color: isUser ? Colors.green.shade300 : colorScheme.outline,
@@ -1650,7 +1655,8 @@ class _ItemCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green.withOpacity(0.3), width: 1),
+        border:
+            Border.all(color: Colors.green.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1658,7 +1664,7 @@ class _ItemCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -1709,7 +1715,7 @@ class _ItemCard extends StatelessWidget {
                     TextButton(
                       onPressed: onViewItem,
                       style: TextButton.styleFrom(
-                        backgroundColor: Colors.green.withOpacity(0.1),
+                        backgroundColor: Colors.green.withValues(alpha: 0.1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),

@@ -202,6 +202,7 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
         type: widget.verifyType,
       );
 
+      if (!mounted) return;
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

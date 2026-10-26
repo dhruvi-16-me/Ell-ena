@@ -302,7 +302,7 @@ class SupabaseService {
   // Generate a random 6-character team ID
   String generateTeamId() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = Random();
+    final random = Random.secure();
     return List.generate(6, (index) => chars[random.nextInt(chars.length)])
         .join();
   }
@@ -1215,7 +1215,7 @@ class SupabaseService {
     if (user == null) return [];
 
     final requestKey =
-        '${filterByAssignment}_${filterByStatus}_${filterByDueDate}';
+        '${filterByAssignment}_${filterByStatus}_$filterByDueDate';
 
     // Reuse in-flight request if present
     final existing = _pendingGetTasks[requestKey];
@@ -2681,7 +2681,7 @@ class SupabaseService {
     required DateTime meetingDate,
     String? meetingUrl,
     String? transcription,
-    String? ai_summary,
+    String? aiSummary,
     int? durationMinutes,
   }) async {
     try {
@@ -2714,8 +2714,8 @@ class SupabaseService {
         meetingData['transcription'] = transcription;
       }
 
-      if (ai_summary != null) {
-        meetingData['ai_summary'] = ai_summary;
+      if (aiSummary != null) {
+        meetingData['ai_summary'] = aiSummary;
       }
 
       if (durationMinutes != null) {

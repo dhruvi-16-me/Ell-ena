@@ -111,15 +111,16 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Future<void> _updateTaskStatus(String status) async {
     final l10n = AppLocalizations.of(context);
     try {
-      final success = await _supabaseService.updateTaskStatus(
+      final result = await _supabaseService.updateTaskStatus(
         taskId: widget.taskId,
         status: status,
       );
 
       if (mounted) {
-        if (success == true) {
+        if (result['success'] == true) {
           // Reload task details
           await _loadTaskDetails();
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -434,7 +435,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           color: Theme.of(context)
                               .colorScheme
                               .shadow
-                              .withOpacity(0.1),
+                              .withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 5),
                         ),
@@ -452,7 +453,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: statusColor.withOpacity(0.1),
+                                color: statusColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(color: statusColor),
                               ),
@@ -484,7 +485,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: approvalColor.withOpacity(0.1),
+                                color: approvalColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(color: approvalColor),
                               ),
@@ -915,7 +916,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               color: Theme.of(context).colorScheme.surface,
               boxShadow: [
                 BoxShadow(
-                  color: Theme.of(context).colorScheme.shadow.withOpacity(0.2),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .shadow
+                      .withValues(alpha: 0.2),
                   blurRadius: 10,
                   offset: const Offset(0, -5),
                 ),

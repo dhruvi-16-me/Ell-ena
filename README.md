@@ -251,6 +251,11 @@ Join the AOSSIE Discord and discuss Ell-ena in our project channel:
 
 - [Ell-ena Discord channel](https://discord.com/channels/1022871757289422898/1349032611267477586)
 
+## 🐛 Reporting Issues
+
+- **Bugs and feature requests:** open an issue using one of the [issue templates](https://github.com/AOSSIE-Org/Ell-ena/issues/new/choose). Search [existing issues](https://github.com/AOSSIE-Org/Ell-ena/issues) first.
+- **Security vulnerabilities:** do not open a public issue. Follow the [AOSSIE security policy](https://github.com/AOSSIE-Org/.github/blob/main/SECURITY.md) to report privately.
+
 ## 📚 Documentation
 
 - [Backend Setup](BACKEND.md): Instructions for setting up the Supabase backend

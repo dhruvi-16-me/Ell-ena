@@ -168,9 +168,7 @@ void main() {
         {'status': 'in_progress'}
       ],
     );
-    // updateTaskStatus returns a result map, not `true`, so the screen
-    // reports a failure even though the change was saved.
-    expect(find.text('Failed to update task status'), findsOneWidget);
+    expect(find.text('Task status updated to In Progress'), findsOneWidget);
 
     // The saved status shows after a refresh.
     await tester.tap(find.byTooltip('Refresh'));
