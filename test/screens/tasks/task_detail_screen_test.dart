@@ -216,6 +216,23 @@ void main() {
     );
   });
 
+  testWidgets('a failed approval reports the error, not success',
+      (tester) async {
+    backend.table('tasks').add(taskRow('t1', status: 'completed'));
+    await pumpDetail(tester);
+
+    backend.failures['tasks'] = 500;
+    await tester.tap(find.text('Approve'));
+    await settle(tester);
+
+    expect(find.text('Task approved'), findsNothing);
+    expect(
+      find.textContaining('Error updating task approval'),
+      findsOneWidget,
+    );
+    expect(backend.table('tasks').single['approval_status'], 'pending');
+  });
+
   testWidgets('members cannot approve or delete tasks they did not create',
       (tester) async {
     await resetInTest(tester, role: 'member');

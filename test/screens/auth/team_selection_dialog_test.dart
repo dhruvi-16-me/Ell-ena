@@ -73,7 +73,7 @@ void main() {
     testWidgets('creates a member profile and goes home', (tester) async {
       backend.rpcs['check_team_code_exists'] = (_) => true;
       await openDialog(tester);
-      await fill(tester, ' Eve ', ' ABC123 ');
+      await fill(tester, ' Eve ', ' abc123 ');
       await tester.tap(action(l10n.authJoinTeam));
       await settle(tester);
 

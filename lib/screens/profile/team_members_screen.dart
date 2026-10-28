@@ -19,6 +19,7 @@ class TeamMembersScreen extends StatefulWidget {
 class _TeamMembersScreenState extends State<TeamMembersScreen> {
   final _supabaseService = SupabaseService();
   bool _isLoading = true;
+  bool _loadFailed = false;
   List<Map<String, dynamic>> _teamMembers = [];
 
   @override
@@ -30,10 +31,14 @@ class _TeamMembersScreenState extends State<TeamMembersScreen> {
   Future<void> _loadTeamMembers() async {
     setState(() {
       _isLoading = true;
+      _loadFailed = false;
     });
 
     try {
-      final members = await _supabaseService.getTeamMembers(widget.teamId);
+      final members = await _supabaseService.getTeamMembers(
+        widget.teamId,
+        throwOnError: true,
+      );
 
       if (mounted) {
         setState(() {
@@ -46,14 +51,8 @@ class _TeamMembersScreenState extends State<TeamMembersScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _loadFailed = true;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                AppLocalizations.of(context).profileErrorLoadingMembers('$e')),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     }
   }
@@ -86,9 +85,11 @@ class _TeamMembersScreenState extends State<TeamMembersScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _teamMembers.isEmpty
-              ? _buildEmptyState()
-              : _buildMembersList(),
+          : _loadFailed
+              ? _buildErrorState()
+              : _teamMembers.isEmpty
+                  ? _buildEmptyState()
+                  : _buildMembersList(),
     );
   }
 
@@ -120,6 +121,46 @@ class _TeamMembersScreenState extends State<TeamMembersScreen> {
               fontSize: 14,
               color: colorScheme.onSurfaceVariant,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.cloud_off,
+            size: 80,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            l10n.profileMembersLoadFailed,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.profileMembersLoadFailedHint,
+            style: TextStyle(
+              fontSize: 14,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _loadTeamMembers,
+            icon: const Icon(Icons.refresh),
+            label: Text(l10n.profileRetry),
           ),
         ],
       ),

@@ -95,19 +95,27 @@ void main() {
         offset: const Duration(days: -1),
         extra: {'transcription_status': 'completed'},
       ),
+      // Started ten minutes ago and still running (30 minutes long).
+      meetingRow(
+        id: 'm7',
+        title: 'In progress',
+        offset: const Duration(minutes: -10),
+        createdBy: 'user-2',
+      ),
     ]);
     await pumpMeetings(tester);
 
-    expect(headerCounts(tester), ['2', '4']);
+    expect(headerCounts(tester), ['3', '4']);
+    expect(find.text('In progress'), findsOneWidget);
     expect(find.text('Tomorrow call'), findsOneWidget);
     expect(find.text('A very long meeting title...'), findsOneWidget);
     expect(find.textContaining('Tomorrow, '), findsOneWidget);
     expect(find.text('Created by Ada'), findsOneWidget);
-    expect(find.text('Created by Bob'), findsOneWidget);
-    expect(find.text('Join'), findsNWidgets(2));
+    expect(find.text('Created by Bob'), findsNWidgets(2));
+    expect(find.text('Join'), findsNWidgets(3));
     // Only the admin's own and the admin-visible upcoming meetings can be
-    // cancelled; the admin sees both.
-    expect(find.byTooltip('Cancel Meeting'), findsNWidgets(2));
+    // cancelled; the admin sees all of them.
+    expect(find.byTooltip('Cancel Meeting'), findsNWidgets(3));
     expect(find.text('Done already'), findsNothing);
 
     await showPast(tester);
@@ -142,11 +150,29 @@ void main() {
     expect(find.text('Created by Unknown'), findsOneWidget);
   });
 
+  testWidgets('cancelling a meeting asks first and keeps it when declined',
+      (tester) async {
+    backend.table('meetings').add(meetingRow(title: 'Keep me'));
+    await pumpMeetings(tester);
+
+    await tester.tap(find.byTooltip('Cancel Meeting'));
+    await settle(tester);
+    expect(find.text('Delete Meeting'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await settle(tester);
+
+    expect(backend.log, isNot(contains('DELETE /rest/v1/meetings')));
+    expect(find.text('Keep me'), findsOneWidget);
+  });
+
   testWidgets('cancelling a meeting deletes it and reloads', (tester) async {
     backend.table('meetings').add(meetingRow(title: 'Cancel me'));
     await pumpMeetings(tester);
 
     await tester.tap(find.byTooltip('Cancel Meeting'));
+    await settle(tester);
+    await tester.tap(find.text('Delete'));
     await settle(tester);
 
     expect(backend.log, contains('DELETE /rest/v1/meetings'));
@@ -160,6 +186,8 @@ void main() {
     backend.failures['meetings'] = 500;
 
     await tester.tap(find.byTooltip('Cancel Meeting'));
+    await settle(tester);
+    await tester.tap(find.text('Delete'));
     await settle(tester);
 
     expect(find.textContaining('Error deleting meeting:'), findsOneWidget);

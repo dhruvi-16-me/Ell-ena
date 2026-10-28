@@ -164,5 +164,23 @@ void main() {
       expect(find.text(l10n.profileNoMembersFound), findsOneWidget);
       expect(find.text(l10n.profileNoMembersYet), findsOneWidget);
     });
+
+    testWidgets('shows an error with retry when loading fails', (tester) async {
+      backend.failures['teams'] = 500;
+      await pumpApp(
+        tester,
+        const TeamMembersScreen(teamId: 'ABC123', teamName: 'Engines'),
+      );
+      await settle(tester);
+
+      expect(find.text(l10n.profileMembersLoadFailed), findsOneWidget);
+      expect(find.text(l10n.profileNoMembersFound), findsNothing);
+
+      await tester.tap(find.text(l10n.profileRetry));
+      await settle(tester);
+
+      expect(find.text(l10n.profileMembersLoadFailed), findsNothing);
+      expect(find.text('Bob'), findsOneWidget);
+    });
   });
 }

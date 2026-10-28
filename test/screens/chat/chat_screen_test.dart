@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:ell_ena/models/chat_message.dart';
 import 'package:ell_ena/models/rag_result.dart';
 import 'package:ell_ena/providers/chat/chat_controller.dart';
@@ -9,6 +12,8 @@ import 'package:ell_ena/widgets/chat/context_insights_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import '../../support/test_harness.dart';
 import 'speech_mock.dart';
@@ -158,6 +163,70 @@ void main() {
     });
   });
 
+  testWidgets('a reply that never comes times out and sending works again',
+      (tester) async {
+    await http.runWithClient(() async {
+      await pumpChat(tester);
+
+      await send(tester, 'Anything');
+      expect(
+        tester
+            .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.send))
+            .onPressed,
+        isNull,
+      );
+
+      await tester.pump(const Duration(seconds: 31));
+      await settle(tester);
+
+      expect(
+        find.text(
+            'Sorry, I encountered an error while processing your request.'),
+        findsOneWidget,
+      );
+      await tester.enterText(find.byType(TextField), 'Again');
+      await tester.pump();
+      expect(
+        tester
+            .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.send))
+            .onPressed,
+        isNotNull,
+      );
+    }, () => MockClient((_) => Completer<http.Response>().future));
+  });
+
+  testWidgets('leaving before the reply arrives still finishes the request',
+      (tester) async {
+    final reply = Completer<http.Response>();
+    await http.runWithClient(() async {
+      final route = await pumpPushed(tester, const ChatScreen());
+      final container =
+          ProviderScope.containerOf(tester.element(find.byType(ChatScreen)));
+
+      await send(tester, 'Anything');
+      expect(container.read(chatControllerProvider).isProcessing, isTrue);
+
+      tester.state<NavigatorState>(find.byType(Navigator)).pop();
+      // Start the pop transition, finish it, then drop the route.
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(route.popped, isTrue);
+      expect(find.byType(ChatScreen), findsNothing);
+
+      reply.complete(http.Response(
+        jsonEncode(FakeBackend.geminiText('Here you go')),
+        200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
+      ));
+      await settle(tester);
+
+      final state = container.read(chatControllerProvider);
+      expect(state.isProcessing, isFalse);
+      expect(state.messages.last.text, 'Here you go');
+    }, () => MockClient((_) => reply.future));
+  });
+
   testWidgets('a Gemini error is shown as an apology', (tester) async {
     await withFakeHttp(() async {
       backend.geminiHandler = (_) => throw FakeHttpError(500);
@@ -181,8 +250,13 @@ void main() {
 
       await send(tester, 'Anything');
 
-      // "No response generated" is the error content.
-      expect(find.text('No response generated'), findsOneWidget);
+      // The technical "No response generated" stays out of the chat.
+      expect(find.text('No response generated'), findsNothing);
+      expect(
+        find.text(
+            'Sorry, I encountered an error while processing your request.'),
+        findsOneWidget,
+      );
     });
   });
 

@@ -4,7 +4,10 @@ import '../../services/supabase_service.dart';
 import '../../utils/task_ticket_link.dart';
 
 class CreateTaskScreen extends StatefulWidget {
-  const CreateTaskScreen({super.key});
+  const CreateTaskScreen({super.key, this.initialDueDate});
+
+  /// Prefills the due date, e.g. with the day picked on the Calendar.
+  final DateTime? initialDueDate;
 
   @override
   State<CreateTaskScreen> createState() => _CreateTaskScreenState();
@@ -25,6 +28,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedDueDate = widget.initialDueDate;
     _loadTeamMembers();
   }
 

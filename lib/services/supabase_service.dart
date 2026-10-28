@@ -300,6 +300,9 @@ class SupabaseService {
   SupabaseClient get client => _client;
 
   // Generate a random 6-character team ID
+  /// Team codes are stored upper-case; accept typed or pasted variants.
+  static String normalizeTeamCode(String code) => code.trim().toUpperCase();
+
   String generateTeamId() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random.secure();
@@ -426,6 +429,7 @@ class SupabaseService {
     required String email,
     required String password,
   }) async {
+    teamId = normalizeTeamCode(teamId);
     try {
       if (!_isInitialized) {
         return {
@@ -496,6 +500,7 @@ class SupabaseService {
   }
 
   Future<bool> teamExists(String teamId) async {
+    teamId = normalizeTeamCode(teamId);
     try {
       if (!_isInitialized) return false;
 
@@ -676,6 +681,7 @@ class SupabaseService {
     required String fullName,
     String? googleRefreshToken,
   }) async {
+    teamCode = normalizeTeamCode(teamCode);
     try {
       if (!_isInitialized) {
         return {
@@ -1159,8 +1165,12 @@ class SupabaseService {
     }
   }
 
-  // Get all members of a specific team
-  Future<List<Map<String, dynamic>>> getTeamMembers(String teamIdOrCode) async {
+  // Get all members of a specific team. Errors return an empty list unless
+  // [throwOnError] is set, so screens can tell "no members" from a failure.
+  Future<List<Map<String, dynamic>>> getTeamMembers(
+    String teamIdOrCode, {
+    bool throwOnError = false,
+  }) async {
     try {
       if (!_isInitialized) return [];
 
@@ -1193,11 +1203,12 @@ class SupabaseService {
           .from('users')
           .select('*')
           .eq('team_id', teamIdUuid)
-          .order('role', ascending: false); // Put admins first
+          .order('role', ascending: true); // 'admin' sorts before 'member'
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       debugPrint('Error getting team members: $e');
+      if (throwOnError) rethrow;
       return [];
     }
   }
@@ -1259,19 +1270,19 @@ class SupabaseService {
       final isAdmin = userProfile['role'] == 'admin';
 
       // Create base query
-      final query = _client.from('tasks').select('*').eq('team_id', teamId);
+      var query = _client.from('tasks').select('*').eq('team_id', teamId);
 
       // Filter by assignment if requested and user is not admin
       if (filterByAssignment && !isAdmin) {
-        query.eq('assigned_to', userId);
+        query = query.eq('assigned_to', userId);
       } else if (filterByAssignment) {
         // If admin but still wants to see assigned tasks
-        query.eq('assigned_to', userId);
+        query = query.eq('assigned_to', userId);
       }
 
       // Filter by status if provided
       if (filterByStatus != null) {
-        query.eq('status', filterByStatus);
+        query = query.eq('status', filterByStatus);
       }
 
       // Filter by due date if provided
@@ -1282,8 +1293,8 @@ class SupabaseService {
           final endOfDay =
               DateTime(date.year, date.month, date.day, 23, 59, 59);
 
-          query.gte('due_date', startOfDay.toIso8601String());
-          query.lte('due_date', endOfDay.toIso8601String());
+          query = query.gte('due_date', startOfDay.toIso8601String());
+          query = query.lte('due_date', endOfDay.toIso8601String());
         } catch (e) {
           debugPrint('Error parsing due date filter: $e');
         }
@@ -1403,6 +1414,13 @@ class SupabaseService {
     }
   }
 
+  // Row-level security turns a forbidden update into one that changes no rows,
+  // so callers must treat an empty result as a failure.
+  Map<String, dynamic> _notUpdated(String item) => {
+        'success': false,
+        'error': '$item not found or permission denied',
+      };
+
   // Update a task's status
   Future<Map<String, dynamic>> updateTaskStatus({
     required String taskId,
@@ -1425,7 +1443,12 @@ class SupabaseService {
       }
 
       // Update the task status
-      await _client.from('tasks').update({'status': status}).eq('id', taskId);
+      final updated = await _client
+          .from('tasks')
+          .update({'status': status})
+          .eq('id', taskId)
+          .select('id');
+      if (updated.isEmpty) return _notUpdated('Task');
 
       return {
         'success': true,
@@ -1461,11 +1484,16 @@ class SupabaseService {
         };
       }
 
-      await _client.from('tasks').update({
-        'ticket_id': ticketId == null || ticketId.trim().isEmpty
-            ? null
-            : ticketId.trim(),
-      }).eq('id', taskId);
+      final updated = await _client
+          .from('tasks')
+          .update({
+            'ticket_id': ticketId == null || ticketId.trim().isEmpty
+                ? null
+                : ticketId.trim(),
+          })
+          .eq('id', taskId)
+          .select('id');
+      if (updated.isEmpty) return _notUpdated('Task');
 
       return {'success': true};
     } catch (e) {
@@ -1508,9 +1536,12 @@ class SupabaseService {
       }
 
       // Update the task approval status
-      await _client
+      final updated = await _client
           .from('tasks')
-          .update({'approval_status': approvalStatus}).eq('id', taskId);
+          .update({'approval_status': approvalStatus})
+          .eq('id', taskId)
+          .select('id');
+      if (updated.isEmpty) return _notUpdated('Task');
 
       return {
         'success': true,
@@ -1776,24 +1807,24 @@ class SupabaseService {
       final isAdmin = userProfile['role'] == 'admin';
 
       // Create base query
-      final query = _client.from('tickets').select('*').eq('team_id', teamId);
+      var query = _client.from('tickets').select('*').eq('team_id', teamId);
 
       // Filter by assignment if requested and user is not admin
       if (filterByAssignment && !isAdmin) {
-        query.eq('assigned_to', userId);
+        query = query.eq('assigned_to', userId);
       } else if (filterByAssignment) {
         // If admin but still wants to see assigned tickets
-        query.eq('assigned_to', userId);
+        query = query.eq('assigned_to', userId);
       }
 
       // Filter by status if provided
       if (filterByStatus != null) {
-        query.eq('status', filterByStatus);
+        query = query.eq('status', filterByStatus);
       }
 
       // Filter by priority if provided
       if (filterByPriority != null) {
-        query.eq('priority', filterByPriority);
+        query = query.eq('priority', filterByPriority);
       }
 
       final response = await query.order('created_at', ascending: false);
@@ -2061,9 +2092,12 @@ class SupabaseService {
       }
 
       // Update the ticket status
-      await _client
+      final updated = await _client
           .from('tickets')
-          .update({'status': status}).eq('id', ticketId);
+          .update({'status': status})
+          .eq('id', ticketId)
+          .select('id');
+      if (updated.isEmpty) return _notUpdated('Ticket');
 
       // Refresh tickets
       await getTickets();
@@ -2102,9 +2136,12 @@ class SupabaseService {
       }
 
       // Update the ticket priority
-      await _client
+      final updated = await _client
           .from('tickets')
-          .update({'priority': priority}).eq('id', ticketId);
+          .update({'priority': priority})
+          .eq('id', ticketId)
+          .select('id');
+      if (updated.isEmpty) return _notUpdated('Ticket');
 
       // Refresh tickets
       await getTickets();
@@ -2152,9 +2189,12 @@ class SupabaseService {
       }
 
       // Update the ticket approval status
-      await _client
+      final updated = await _client
           .from('tickets')
-          .update({'approval_status': approvalStatus}).eq('id', ticketId);
+          .update({'approval_status': approvalStatus})
+          .eq('id', ticketId)
+          .select('id');
+      if (updated.isEmpty) return _notUpdated('Ticket');
 
       // Refresh tickets
       await getTickets();
@@ -2370,9 +2410,12 @@ class SupabaseService {
       }
 
       // Update the ticket
-      await _client
+      final updated = await _client
           .from('tickets')
-          .update({'assigned_to': userId}).eq('id', ticketId);
+          .update({'assigned_to': userId})
+          .eq('id', ticketId)
+          .select('id');
+      if (updated.isEmpty) return _notUpdated('Ticket');
 
       // Refresh tickets
       await getTickets();

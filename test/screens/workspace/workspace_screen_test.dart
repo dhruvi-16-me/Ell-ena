@@ -5,17 +5,16 @@ import 'package:ell_ena/screens/tasks/task_screen.dart';
 import 'package:ell_ena/screens/tickets/create_ticket_screen.dart';
 import 'package:ell_ena/screens/tickets/ticket_screen.dart';
 import 'package:ell_ena/screens/workspace/workspace_screen.dart';
-import 'package:ell_ena/widgets/custom_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/test_harness.dart';
+import '../tasks/task_fixtures.dart';
 
 void main() {
   setUpAll(setUpFakeSupabase);
   setUp(resetFakeSupabase);
 
-  /// Pumps the workspace and waits out its two-second loading skeleton.
   Future<List<int>> pumpWorkspace(
     WidgetTester tester, {
     int initialTabIndex = 0,
@@ -30,58 +29,60 @@ void main() {
       ),
       themeMode: themeMode,
     );
-    expect(find.byType(WorkspaceLoadingSkeleton), findsOneWidget);
-    await tester.pump(const Duration(seconds: 2));
     await settle(tester);
-    expect(find.byType(WorkspaceLoadingSkeleton), findsNothing);
     return selected;
   }
 
-  // Each tab's own page has an add button too; this is the workspace's.
-  final addButton = find.byWidgetPredicate(
-    (w) => w is FloatingActionButton && w.heroTag == 'workspace-add-button',
-  );
-
-  FloatingActionButton fab(WidgetTester tester) =>
-      tester.widget<FloatingActionButton>(addButton);
+  int taskLoads() =>
+      backend.log.where((r) => r == 'GET /rest/v1/tasks').length;
 
   testWidgets('starts on tasks and reports tab changes', (tester) async {
     final selected = await pumpWorkspace(tester);
 
     expect(find.byType(TaskScreen), findsOneWidget);
-    expect(fab(tester).tooltip, 'New Task');
 
     await tester.tap(find.text('Tickets'));
     await settle(tester);
     expect(find.byType(TicketScreen), findsOneWidget);
-    expect(fab(tester).tooltip, 'New Ticket');
 
     await tester.tap(find.text('Meetings'));
     await settle(tester);
     expect(find.byType(MeetingScreen), findsOneWidget);
-    expect(fab(tester).tooltip, 'New Meeting');
 
     expect(selected, [1, 2]);
+  });
+
+  testWidgets('switching tabs keeps each list and its status filter',
+      (tester) async {
+    backend.table('tasks').add(
+          taskRow('t1', title: 'Build API', status: 'in_progress'),
+        );
+    await pumpWorkspace(tester);
+
+    await tester.tap(find.text('In Progress').last);
+    await settle(tester);
+    expect(find.text('Build API'), findsOneWidget);
+    final loads = taskLoads();
+
+    await tester.tap(find.text('Tickets'));
+    await settle(tester);
+    await tester.tap(find.text('Tasks'));
+    await settle(tester);
+
+    expect(find.text('Build API'), findsOneWidget);
+    expect(taskLoads(), loads);
   });
 
   testWidgets('out-of-range initial tab is clamped', (tester) async {
     await pumpWorkspace(tester, initialTabIndex: 7, themeMode: ThemeMode.dark);
 
     expect(find.byType(MeetingScreen), findsOneWidget);
-    expect(fab(tester).tooltip, 'New Meeting');
   });
 
   testWidgets('a new initial tab from the route moves the tab bar',
       (tester) async {
     await pumpWorkspace(tester);
-
-    // The parent rebuilds with another deep-link tab.
-    await tester.pumpWidget(Container());
-    await pumpApp(tester, const WorkspaceScreen(initialTabIndex: 0));
     final state = tester.state(find.byType(WorkspaceScreen));
-    expect(state.mounted, isTrue);
-    await tester.pump(const Duration(seconds: 2));
-    await settle(tester);
 
     await pumpApp(tester, const WorkspaceScreen(initialTabIndex: 1));
     await settle(tester);
@@ -95,9 +96,13 @@ void main() {
     1: [CreateTicketScreen, 'Ticket created successfully', 'tickets'],
     2: [CreateMeetingScreen, 'Meeting created successfully', 'meetings'],
   }.entries) {
-    testWidgets('add button on tab ${entry.key} creates and confirms',
+    testWidgets('tab ${entry.key} has one add button that creates and confirms',
         (tester) async {
       await pumpWorkspace(tester, initialTabIndex: entry.key);
+
+      // Only the open page's own button, not a second workspace one.
+      final addButton = find.byType(FloatingActionButton);
+      expect(addButton, findsOneWidget);
 
       await tester.tap(addButton);
       await settle(tester);
@@ -113,19 +118,6 @@ void main() {
       expect(find.text(entry.value[1] as String), findsOneWidget);
       // The open list reloads.
       expect(backend.log, contains('GET /rest/v1/${entry.value[2]}'));
-    });
-
-    testWidgets('closing the form on tab ${entry.key} shows nothing',
-        (tester) async {
-      await pumpWorkspace(tester, initialTabIndex: entry.key);
-
-      await tester.tap(addButton);
-      await settle(tester);
-      Navigator.of(tester.element(find.byType(entry.value[0] as Type))).pop();
-      await tester.pump(const Duration(seconds: 1));
-      await settle(tester);
-
-      expect(find.byType(SnackBar), findsNothing);
     });
   }
 }

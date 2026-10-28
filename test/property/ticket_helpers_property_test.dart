@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:ell_ena/l10n/app_localizations_en.dart';
 import 'package:ell_ena/utils/github_sync_ui.dart';
 import 'package:ell_ena/utils/task_ticket_link.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -60,11 +61,12 @@ void main() {
   });
 
   group('GithubSyncUi', () {
-    const labels = {
-      'GitHub sync in progress',
-      'Synced to GitHub',
-      'GitHub sync failed',
-      'Not synced to GitHub',
+    final l10n = AppLocalizationsEn();
+    final labels = {
+      l10n.ticketGithubSyncPending,
+      l10n.ticketGithubSynced,
+      l10n.ticketGithubSyncStatusFailed,
+      l10n.ticketGithubNotSynced,
     };
     final statuses = Gens.nullable(Gens.oneOf(
         ['pending', 'synced', 'failed', 'not_requested', 'weird', '']));
@@ -73,11 +75,11 @@ void main() {
       'every status has one of the four labels',
       (r) => Gens.nullable(Gens.string(maxLength: 8))(r),
       (status) {
-        final label = GithubSyncUi.statusLabel(status);
+        final label = GithubSyncUi.statusLabel(l10n, status);
 
         expect(labels, contains(label));
         if (!const {'pending', 'synced', 'failed'}.contains(status)) {
-          expect(label, 'Not synced to GitHub');
+          expect(label, l10n.ticketGithubNotSynced);
         }
       },
     );

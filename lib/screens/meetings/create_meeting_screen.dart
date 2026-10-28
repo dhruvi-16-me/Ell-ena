@@ -20,6 +20,9 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
   
   final _supabaseService = SupabaseService();
   final _googleMeetService = GoogleMeetService();
+
+  /// One Calendar event per form, so Generate again or Retry reuses it.
+  final _meetEventId = GoogleMeetService.newEventId();
   
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
@@ -100,6 +103,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
           ? _titleController.text.trim()
           : 'Meeting',
       description: _descriptionController.text.trim(),
+      eventId: _meetEventId,
     );
 
     if (!mounted) return;

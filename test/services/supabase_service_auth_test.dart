@@ -42,6 +42,7 @@ void main() {
       stubTeamCodes({'ABC123'});
 
       expect(await service.teamExists('ABC123'), isTrue);
+      expect(await service.teamExists(' abc123 '), isTrue);
       expect(await service.teamExists('NOPE00'), isFalse);
 
       backend.rpcs.remove('check_team_code_exists');
@@ -161,6 +162,27 @@ void main() {
 
       backend.failures['teams'] = 500;
       expect(await service.getTeamMembers('ABC123'), isEmpty);
+    });
+
+    test('getTeamMembers can surface errors instead of an empty list',
+        () async {
+      final service = await signedInService();
+      backend.failures['users'] = 500;
+
+      expect(
+        service.getTeamMembers(FakeBackend.teamId, throwOnError: true),
+        throwsA(anything),
+      );
+    });
+
+    test('getTeamMembers lists admins first', () async {
+      backend.table('users').first['role'] = 'member';
+      backend.table('users')[1]['role'] = 'admin';
+      final service = await signedInService();
+
+      final members = await service.getTeamMembers(FakeBackend.teamId);
+
+      expect(members.map((m) => m['full_name']), ['Bob', 'Ada']);
     });
 
     test('loadTeamMembers caches per team and names come from the cache',
@@ -354,7 +376,7 @@ void main() {
       final service = signedOutService();
 
       final result = await service.joinTeam(
-        teamId: 'ABC123',
+        teamId: 'abc123 ',
         fullName: 'Grace',
         email: 'grace@example.com',
         password: 'pw',
@@ -426,7 +448,7 @@ void main() {
 
       final result = await service.joinTeamWithGoogle(
         email: FakeBackend.userEmail.toUpperCase(),
-        teamCode: 'ABC123',
+        teamCode: ' abc123',
         fullName: 'Ada',
         googleRefreshToken: 'g-token',
       );

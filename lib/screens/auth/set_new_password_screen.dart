@@ -8,7 +8,7 @@ import 'login_screen.dart';
 
 class SetNewPasswordScreen extends StatefulWidget {
   final String email;
-  
+
   const SetNewPasswordScreen({
     super.key,
     required this.email,
@@ -50,6 +50,8 @@ class _SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
         );
 
         if (response.user != null) {
+          // The reset session would otherwise reopen the app signed in.
+          await _supabaseService.signOut();
           if (mounted) {
             // Show success message
             ScaffoldMessenger.of(context).showSnackBar(
@@ -58,7 +60,7 @@ class _SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
                 backgroundColor: Colors.green,
               ),
             );
-            
+
             // Navigate to login screen
             NavigationService().navigateToReplacement(const LoginScreen());
           }
@@ -142,7 +144,8 @@ class _SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
               CustomButton(
                 text: l10n.authBackToLogin,
                 onPressed: () {
-                  NavigationService().navigateToReplacement(const LoginScreen());
+                  NavigationService()
+                      .navigateToReplacement(const LoginScreen());
                 },
                 isOutlined: true,
               ),
@@ -152,4 +155,4 @@ class _SetNewPasswordScreenState extends State<SetNewPasswordScreen> {
       ],
     );
   }
-} 
+}

@@ -77,8 +77,7 @@ class _TicketScreenState extends State<TicketScreen> {
       }
 
       // Initial load of tickets with filtering
-      final tickets =
-          await _supabaseService.getTickets(filterByAssignment: true);
+      final tickets = await _supabaseService.getTickets();
 
       if (mounted) {
         setState(() {
@@ -99,13 +98,21 @@ class _TicketScreenState extends State<TicketScreen> {
   Future<void> _updateTicketStatus(String ticketId, String status) async {
     final l10n = AppLocalizations.of(context);
     try {
-      await _supabaseService.updateTicketStatus(
+      final result = await _supabaseService.updateTicketStatus(
         ticketId: ticketId,
         status: status,
       );
 
       // Reload tickets after update
-      _loadInitialData();
+      _loadInitialData(showLoading: false);
+      if (result['success'] != true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.ticketErrorUpdatingStatus('${result['error']}')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('Error updating ticket status: $e');
       if (mounted) {
@@ -123,13 +130,22 @@ class _TicketScreenState extends State<TicketScreen> {
       String ticketId, String approvalStatus) async {
     final l10n = AppLocalizations.of(context);
     try {
-      await _supabaseService.updateTicketApproval(
+      final result = await _supabaseService.updateTicketApproval(
         ticketId: ticketId,
         approvalStatus: approvalStatus,
       );
 
       // Reload tickets after update
-      _loadInitialData();
+      _loadInitialData(showLoading: false);
+      if (result['success'] != true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text(l10n.ticketErrorUpdatingApproval('${result['error']}')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('Error updating ticket approval: $e');
       if (mounted) {
@@ -248,7 +264,7 @@ class _TicketScreenState extends State<TicketScreen> {
 
     if (result == true) {
       // Ticket was updated in detail screen, refresh tickets
-      _loadInitialData();
+      _loadInitialData(showLoading: false);
     }
   }
 
@@ -511,6 +527,12 @@ class _TicketScreenState extends State<TicketScreen> {
               setState(() {
                 final item = filteredTickets.removeAt(oldIndex);
                 filteredTickets.insert(newIndex, item);
+                // The list is rebuilt from _tickets, so keep the new order there.
+                _tickets = [
+                  ..._tickets
+                      .where((ticket) => ticket['status'] != _selectedStatus),
+                  ...filteredTickets,
+                ];
               });
             },
             itemBuilder: (context, index) {

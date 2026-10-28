@@ -45,7 +45,7 @@ class _TeamSelectionDialogState extends State<TeamSelectionDialog> {
     try {
       final result = await _supabaseService.joinTeamWithGoogle(
         email: widget.userEmail,
-        teamCode: _teamCodeController.text.trim(),
+        teamCode: SupabaseService.normalizeTeamCode(_teamCodeController.text),
         fullName: _userNameController.text.trim(),
         googleRefreshToken: widget.googleRefreshToken,
       );
@@ -254,7 +254,7 @@ class _TeamSelectionDialogState extends State<TeamSelectionDialog> {
                         label: l10n.authTeamCodeLabel,
                         icon: Icons.qr_code,
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return l10n.authEnterTeamCode;
                           }
                           return null;
@@ -290,9 +290,7 @@ class _TeamSelectionDialogState extends State<TeamSelectionDialog> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : Text(
-                    _isJoiningTeam
-                        ? l10n.authJoinTeam
-                        : l10n.authCreateTeam,
+                    _isJoiningTeam ? l10n.authJoinTeam : l10n.authCreateTeam,
                     style: TextStyle(color: Colors.green.shade400),
                   ),
           ),

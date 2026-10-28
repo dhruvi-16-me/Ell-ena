@@ -200,7 +200,6 @@ class _HomeScreenState extends State<HomeScreen> {
       const DashboardScreen(),
       const CalendarScreen(),
       WorkspaceScreen(
-        key: ValueKey<int>(_workspaceTabIndex),
         initialTabIndex: _workspaceTabIndex,
         onTabSelected: _onWorkspaceTabSelected,
       ),

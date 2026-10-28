@@ -15,6 +15,7 @@ void main() {
   Future<Object? Function()> openCreate(
     WidgetTester tester, {
     ThemeMode themeMode = ThemeMode.light,
+    DateTime? initialDueDate,
   }) async {
     Object? popped = 'not popped';
     await pumpApp(
@@ -24,7 +25,10 @@ void main() {
           body: TextButton(
             onPressed: () async {
               popped = await Navigator.of(context).push<Object?>(
-                MaterialPageRoute(builder: (_) => const CreateTaskScreen()),
+                MaterialPageRoute(
+                  builder: (_) =>
+                      CreateTaskScreen(initialDueDate: initialDueDate),
+                ),
               );
             },
             child: const Text('open'),
@@ -96,6 +100,19 @@ void main() {
     expect(popped(), isTrue);
     await tester.pumpAndSettle();
     expect(find.byType(CreateTaskScreen), findsNothing);
+  });
+
+  testWidgets('starts with the given due date', (tester) async {
+    final day = DateTime(2030, 3, 14);
+    await openCreate(tester, initialDueDate: day);
+
+    expect(find.text('14/3/2030'), findsOneWidget);
+    await tester.enterText(find.byType(TextFormField).first, 'Planned task');
+    await tester.tap(find.text('Create Task'));
+    await settle(tester);
+
+    final body = backend.bodiesFor('POST', '/rest/v1/tasks').single as Map;
+    expect(DateTime.parse(body['due_date'] as String), day);
   });
 
   testWidgets('choosing Unassigned clears the assignee', (tester) async {

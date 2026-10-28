@@ -126,7 +126,8 @@ void main() {
       expect(backend.log, isEmpty);
     });
 
-    testWidgets('updates the password and returns to login', (tester) async {
+    testWidgets('updates the password, signs out and returns to login',
+        (tester) async {
       await pumpRoutedScreen(tester, screen);
       await tester.enterText(find.byType(TextFormField).at(0), 'newpass1');
       await tester.enterText(find.byType(TextFormField).at(1), 'newpass1');
@@ -135,6 +136,7 @@ void main() {
 
       final body = backend.bodiesFor('PUT', '/auth/v1/user').single as Map;
       expect(body['password'], 'newpass1');
+      expect(backend.log, contains('POST /auth/v1/logout'));
       expect(find.text(loginPageText), findsOneWidget);
       expect(find.text(l10n.authPasswordUpdated), findsOneWidget);
     });

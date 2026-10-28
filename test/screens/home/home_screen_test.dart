@@ -94,9 +94,8 @@ void main() {
       final workspace =
           tester.widget<WorkspaceScreen>(find.byType(WorkspaceScreen));
       expect(workspace.initialTabIndex, 1);
+      final state = tester.state(find.byType(WorkspaceScreen));
 
-      // Skeleton first, then the tabs.
-      await tester.pump(const Duration(seconds: 2));
       await settle(tester);
       await tester.tap(find.text('Meetings'));
       await settle(tester);
@@ -105,8 +104,8 @@ void main() {
       // The plain workspace path opens the first tab.
       router.go(AppRoutes.workspace);
       await settle(tester);
-      await tester.pump(const Duration(seconds: 2));
-      await settle(tester);
+      // Tab routes move the same workspace rather than rebuilding it.
+      expect(tester.state(find.byType(WorkspaceScreen)), same(state));
       expect(
         tester
             .widget<WorkspaceScreen>(find.byType(WorkspaceScreen))
@@ -138,8 +137,6 @@ void main() {
 
       final chat = tester.widget<ChatScreen>(find.byType(ChatScreen));
       expect(chat.arguments, isNull);
-      // Let the workspace tab's loading delay finish.
-      await tester.pump(const Duration(seconds: 2));
     });
   });
 

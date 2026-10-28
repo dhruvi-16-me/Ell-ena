@@ -1,13 +1,25 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ell_ena/l10n/app_localizations_en.dart';
+import 'package:ell_ena/l10n/app_localizations_hi.dart';
 import 'package:ell_ena/utils/github_sync_ui.dart';
 
 void main() {
   group('GithubSyncUi', () {
     test('statusLabel maps known statuses', () {
-      expect(GithubSyncUi.statusLabel('synced'), 'Synced to GitHub');
-      expect(GithubSyncUi.statusLabel('pending'), 'GitHub sync in progress');
-      expect(GithubSyncUi.statusLabel('failed'), 'GitHub sync failed');
-      expect(GithubSyncUi.statusLabel('not_requested'), 'Not synced to GitHub');
+      final l10n = AppLocalizationsEn();
+      expect(GithubSyncUi.statusLabel(l10n, 'synced'), 'Synced to GitHub');
+      expect(
+          GithubSyncUi.statusLabel(l10n, 'pending'), 'GitHub sync in progress');
+      expect(GithubSyncUi.statusLabel(l10n, 'failed'), 'GitHub sync failed');
+      expect(GithubSyncUi.statusLabel(l10n, 'not_requested'),
+          'Not synced to GitHub');
+    });
+
+    test('statusLabel follows the app language', () {
+      final l10n = AppLocalizationsHi();
+      expect(GithubSyncUi.statusLabel(l10n, 'synced'), l10n.ticketGithubSynced);
+      expect(GithubSyncUi.statusLabel(l10n, 'synced'),
+          isNot(AppLocalizationsEn().ticketGithubSynced));
     });
 
     test('shouldShowSection for sync intent and statuses', () {

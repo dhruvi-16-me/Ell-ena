@@ -11,9 +11,12 @@ void main() {
   setUpAll(setUpFakeSupabase);
   setUp(resetFakeSupabase);
 
-  Future<void> pumpChat(WidgetTester tester) async {
-    await pumpApp(tester, const ChatScreen());
+  // Opened as a pushed route, as from the Calendar, so popping the wrong
+  // route would close the chat screen.
+  Future<PushedResult> pumpChat(WidgetTester tester) async {
+    final result = await pumpPushed(tester, const ChatScreen());
     await settle(tester);
+    return result;
   }
 
   String inputText(WidgetTester tester) =>
@@ -40,7 +43,7 @@ void main() {
   testWidgets('dictation: results, completion, cancel, stop and errors',
       (tester) async {
     mockSpeech(available: true);
-    await pumpChat(tester);
+    final chatRoute = await pumpChat(tester);
     int stops() => speechCalls.where((c) => c == 'stop').length;
 
     // Words fill the input; the plugin finishing closes the dialog.
@@ -57,6 +60,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(listeningDialog, findsNothing);
     expect(find.byTooltip('Voice input'), findsOneWidget);
+    // The plugin also reports "done"; only the dialog was closed.
+    await sendSpeechEvent('notifyStatus', 'done');
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(chatRoute.popped, isFalse);
+    expect(find.byType(ChatScreen), findsOneWidget);
 
     // Dismissing the dialog while listening stops the session.
     await tester.tap(find.byTooltip('Voice input'));
@@ -66,6 +74,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(listeningDialog, findsNothing);
     expect(stops(), 1);
+    // The plugin then reports it stopped; the chat screen stays open.
+    await sendSpeechEvent('notifyStatus', 'notListening');
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(chatRoute.popped, isFalse);
+    expect(find.byType(ChatScreen), findsOneWidget);
 
     // Dismissed before the plugin started: nothing to stop yet. Once it
     // reports listening, the mic button stops it.
@@ -91,6 +104,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(listeningDialog, findsNothing);
     expect(find.byTooltip('Voice input'), findsOneWidget);
+    expect(chatRoute.popped, isFalse);
 
     // Leaving the screen mid-session stops it.
     await sendSpeechEvent('notifyStatus', 'listening');

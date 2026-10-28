@@ -272,4 +272,62 @@ void main() {
     );
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
   });
+
+  testWidgets('generating the Meet link again reuses one Calendar event',
+      (tester) async {
+    platform.googleAccount = {
+      'email': 'ada@example.com',
+      'id': 'google-1',
+      'displayName': 'Ada',
+      'photoUrl': null,
+      'idToken': null,
+      'serverAuthCode': null,
+    };
+    final calendarRequests = <http.Request>[];
+    final client = MockClient((request) async {
+      if (request.url.host == 'www.googleapis.com') {
+        calendarRequests.add(request);
+        // The first insert creates the event; later ones collide with it.
+        if (request.method == 'POST' && calendarRequests.length > 1) {
+          return http.Response(
+            '{"error":{"code":409,"message":"duplicate"}}',
+            409,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response(
+          jsonEncode({'hangoutLink': 'https://meet.google.com/same-link'}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return backend.client.send(request).then(http.Response.fromStream);
+    });
+
+    await http.runWithClient(() async {
+      await openForm(tester);
+      await pickFutureDate(tester);
+      await pickTime(tester);
+
+      for (var i = 0; i < 2; i++) {
+        await tester.tap(find.text('Create Google Meet Link'));
+        await pumpUntilFound(
+          tester,
+          find.text('Google Meet link created successfully'),
+        );
+        ScaffoldMessenger.of(tester.element(find.byType(CreateMeetingScreen)))
+            .clearSnackBars();
+        await tester.pumpAndSettle();
+      }
+    }, () => client);
+
+    expect(calendarRequests.map((r) => r.method), ['POST', 'POST', 'PATCH']);
+    final ids = calendarRequests
+        .where((r) => r.method == 'POST')
+        .map((r) => (jsonDecode(r.body) as Map)['id'])
+        .toSet();
+    expect(ids, hasLength(1));
+    expect(calendarRequests.last.url.path, endsWith('/events/${ids.single}'));
+    expect(find.text('https://meet.google.com/same-link'), findsOneWidget);
+  });
 }

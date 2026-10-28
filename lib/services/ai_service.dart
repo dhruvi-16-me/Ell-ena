@@ -16,6 +16,10 @@ class AIService {
   bool _isInitialized = false;
   late final SupabaseService _supabaseService;
 
+  /// How long a Gemini request may take before it is treated as failed.
+  @visibleForTesting
+  Duration requestTimeout = const Duration(seconds: 30);
+
   factory AIService() {
     return _instance;
   }
@@ -321,13 +325,15 @@ class AIService {
           'Sending chat request to Gemini API: ${jsonEncode(requestBody)}');
 
       // Make the API request
-      final response = await http.post(
-        Uri.parse('$_apiUrl?key=$_apiKey'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(requestBody),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$_apiUrl?key=$_apiKey'),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(requestBody),
+          )
+          .timeout(requestTimeout);
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -383,8 +389,9 @@ class AIService {
     }
   }
 
-  // Function to handle tool responses
-  Future<String> handleToolResponse({
+  /// Asks Gemini to summarise a tool [result] for the user. Returns null when
+  /// no summary is available, so the caller can report the outcome itself.
+  Future<String?> handleToolResponse({
     required String functionName,
     required Map<String, dynamic> arguments,
     required String rawResponse,
@@ -455,30 +462,31 @@ class AIService {
       debugPrint('Sending request to Gemini API: ${jsonEncode(requestBody)}');
 
       // Make the API request
-      final response = await http.post(
-        Uri.parse('$_apiUrl?key=$_apiKey'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(requestBody),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$_apiUrl?key=$_apiKey'),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(requestBody),
+          )
+          .timeout(requestTimeout);
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         final candidates = responseData['candidates'] as List<dynamic>;
         if (candidates.isNotEmpty) {
-          return candidates[0]['content']['parts'][0]['text'] ??
-              'Function executed successfully.';
+          return candidates[0]['content']['parts'][0]['text'];
         }
-        return 'Function executed successfully.';
+        return null;
       } else {
         debugPrint(
             'Error from Gemini API: ${response.statusCode} ${response.body}');
-        return 'Function executed successfully.';
+        return null;
       }
     } catch (e) {
       debugPrint('Error handling tool response: $e');
-      return 'Function executed successfully.';
+      return null;
     }
   }
 

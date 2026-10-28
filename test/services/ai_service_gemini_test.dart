@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:ell_ena/services/ai_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import '../support/test_harness.dart';
 
@@ -209,18 +212,17 @@ void main() {
       });
     });
 
-    test('falls back to a generic confirmation', () async {
-      Future<String> respond({String raw = '{}'}) =>
+    test('returns no summary when Gemini has none', () async {
+      Future<String?> respond({String raw = '{}'}) =>
           withFakeHttp(() => ai.handleToolResponse(
                 functionName: 'query_tasks',
                 arguments: const {},
                 rawResponse: raw,
                 result: const {},
               ));
-      const fallback = 'Function executed successfully.';
 
       backend.geminiHandler = (_) => {'candidates': []};
-      expect(await respond(), fallback);
+      expect(await respond(), isNull);
 
       backend.geminiHandler = (_) => {
             'candidates': [
@@ -231,13 +233,45 @@ void main() {
               }
             ]
           };
-      expect(await respond(), fallback);
+      expect(await respond(), isNull);
 
       backend.geminiHandler = (_) => throw FakeHttpError(500);
-      expect(await respond(), fallback);
+      expect(await respond(), isNull);
 
-      expect(await respond(raw: 'not json'), fallback);
+      expect(await respond(raw: 'not json'), isNull);
       expect(geminiRequests(), hasLength(3));
+    });
+  });
+
+  group('timeouts', () {
+    /// Gemini never answers.
+    Future<T> withHangingGemini<T>(Future<T> Function() body) =>
+        http.runWithClient(
+          body,
+          () => MockClient((_) => Completer<http.Response>().future),
+        );
+
+    setUp(() => ai.requestTimeout = const Duration(milliseconds: 20));
+    tearDown(() => ai.requestTimeout = const Duration(seconds: 30));
+
+    test('a chat request that hangs becomes an error reply', () async {
+      final reply = await withHangingGemini(() => ai.generateChatResponse(
+          'q', const [], const [],
+          retrieveContext: false));
+
+      expect(reply['type'], 'error');
+      expect(reply['content'], startsWith('Sorry'));
+    });
+
+    test('a tool summary that hangs returns no summary', () async {
+      final text = await withHangingGemini(() => ai.handleToolResponse(
+            functionName: 'create_task',
+            arguments: const {},
+            rawResponse: '{}',
+            result: const {'success': true},
+          ));
+
+      expect(text, isNull);
     });
   });
 

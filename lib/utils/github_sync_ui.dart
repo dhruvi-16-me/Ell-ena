@@ -1,18 +1,20 @@
+import '../l10n/app_localizations.dart';
+
 /// User-facing labels for ticket GitHub sync fields (no secrets).
 class GithubSyncUi {
   const GithubSyncUi._();
 
-  static String statusLabel(String? status) {
+  static String statusLabel(AppLocalizations l10n, String? status) {
     switch (status) {
       case 'pending':
-        return 'GitHub sync in progress';
+        return l10n.ticketGithubSyncPending;
       case 'synced':
-        return 'Synced to GitHub';
+        return l10n.ticketGithubSynced;
       case 'failed':
-        return 'GitHub sync failed';
+        return l10n.ticketGithubSyncStatusFailed;
       case 'not_requested':
       default:
-        return 'Not synced to GitHub';
+        return l10n.ticketGithubNotSynced;
     }
   }
 

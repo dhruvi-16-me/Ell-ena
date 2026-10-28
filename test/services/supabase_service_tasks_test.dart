@@ -74,29 +74,47 @@ void main() {
       expect(backend.log.where((l) => l == 'GET /rest/v1/tasks'), hasLength(1));
     });
 
-    test('accepts assignment and due date filters, ignoring a bad date',
-        () async {
+    test('applies assignment, status and due date filters', () async {
+      Map<String, dynamic> due(String id, String date,
+              {String? assignedTo = FakeBackend.userId}) =>
+          {...task(id, assignedTo: assignedTo), 'due_date': date};
+      backend.table('tasks').addAll([
+        due('match', '2026-10-01T09:00:00'),
+        due('someone-else', '2026-10-01T09:00:00', assignedTo: 'user-2'),
+        due('next-day', '2026-10-02T09:00:00'),
+        {...due('done', '2026-10-01T09:00:00'), 'status': 'completed'},
+      ]);
+      final service = await signedInService();
+
+      final tasks = await service.getTasks(
+        filterByAssignment: true,
+        filterByStatus: 'todo',
+        filterByDueDate: '2026-10-01',
+      );
+
+      expect(tasks.map((t) => t['id']), ['match']);
+    });
+
+    test('ignores a due date filter it cannot parse', () async {
       backend.table('tasks').add(task('t1'));
       final service = await signedInService();
 
-      final assigned = await service.getTasks(
-        filterByAssignment: true,
-        filterByDueDate: '2026-10-01',
-      );
-      final badDate = await service.getTasks(filterByDueDate: 'not a date');
+      final tasks = await service.getTasks(filterByDueDate: 'not a date');
 
-      expect(assigned.single['id'], 't1');
-      expect(badDate.single['id'], 't1');
+      expect(tasks.single['id'], 't1');
     });
 
-    test('member filters by assignment without failing', () async {
+    test('member filters by assignment', () async {
       backend.table('users').first['role'] = 'member';
-      backend.table('tasks').add(task('t1'));
+      backend.table('tasks').addAll([
+        task('mine', assignedTo: FakeBackend.userId),
+        task('theirs'),
+      ]);
       final service = await signedInService();
 
       final tasks = await service.getTasks(filterByAssignment: true);
 
-      expect(tasks, hasLength(1));
+      expect(tasks.map((t) => t['id']), ['mine']);
     });
 
     test('returns nothing when the user has no team', () async {
@@ -281,6 +299,27 @@ void main() {
 
       expect(result['error'], 'Only admins can approve tasks');
       expect(writesTo('/rest/v1/tasks'), isEmpty);
+    });
+
+    test('updates that row-level security blocks report failure', () async {
+      backend.table('tasks').add(task('t1'));
+      final service = await signedInService(
+        intercept: (r) => r.method == 'PATCH' ? http.Response('[]', 200) : null,
+      );
+      const blocked = {
+        'success': false,
+        'error': 'Task not found or permission denied',
+      };
+
+      expect(await service.updateTaskStatus(taskId: 't1', status: 'completed'),
+          blocked);
+      expect(await service.updateTaskTicket(taskId: 't1', ticketId: 'k1'),
+          blocked);
+      expect(
+          await service.updateTaskApproval(
+              taskId: 't1', approvalStatus: 'approved'),
+          blocked);
+      expect(backend.table('tasks').single['status'], 'todo');
     });
 
     test('updateTaskApproval reports failures', () async {

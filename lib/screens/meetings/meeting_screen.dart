@@ -5,6 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../widgets/adaptive_create_flow.dart';
 import '../../shell/app_shell.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/meeting_status.dart';
 import '../../widgets/custom_widgets.dart';
 import '../../widgets/detail_side_panel.dart';
 import 'create_meeting_screen.dart';
@@ -44,23 +45,6 @@ class _MeetingScreenState extends State<MeetingScreen> {
   void initState() {
     super.initState();
     _loadInitialData();
-  }
-
-  bool _isPastMeeting(Map<String, dynamic> meeting, DateTime now) {
-    final start =
-        DateTime.tryParse(meeting['meeting_date']?.toString() ?? '')?.toUtc();
-    if (start == null) return false;
-    final minutes = (meeting['duration_minutes'] as num?)?.toInt() ?? 60;
-    final ended = !start.add(Duration(minutes: minutes)).isAfter(now.toUtc());
-
-    final transcript = meeting['transcription']?.toString() ?? '';
-    final summary = meeting['ai_summary']?.toString() ?? '';
-    final hasRecord = transcript.isNotEmpty ||
-        summary.isNotEmpty ||
-        meeting['meeting_summary_json'] != null ||
-        meeting['transcription_status'] == 'completed';
-
-    return ended || hasRecord;
   }
 
   /// [showLoading] false reloads behind the current list instead of
@@ -103,6 +87,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
   }
 
   Future<void> _deleteMeeting(String meetingId) async {
+    if (!await confirmMeetingDelete(context) || !mounted) return;
     final l10n = AppLocalizations.of(context);
     try {
       final result = await _supabaseService.deleteMeeting(meetingId);
@@ -162,11 +147,19 @@ class _MeetingScreenState extends State<MeetingScreen> {
   }
 
   Future<void> _openCreateMeeting() async {
+    final l10n = AppLocalizations.of(context);
     final result = await openCreateFlow(context, CreateMeetingScreen());
 
     if (result == true) {
       // Meeting was created, refresh meetings
       _loadInitialData();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.workspaceMeetingCreated),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 
@@ -190,7 +183,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
 
     // Filter meetings based on selected filter
     final filteredMeetings = _meetings.where((meeting) {
-      final isPast = _isPastMeeting(meeting, now);
+      final isPast = isPastMeeting(meeting, now);
       if (_selectedFilter == 'upcoming') {
         return !isPast;
       }
@@ -198,7 +191,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
     }).toList();
 
     final pastCount =
-        _meetings.where((meeting) => _isPastMeeting(meeting, now)).length;
+        _meetings.where((meeting) => isPastMeeting(meeting, now)).length;
     final upcomingCount = _meetings.length - pastCount;
 
     return Scaffold(
@@ -449,7 +442,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
       itemCount: filteredMeetings.length,
       itemBuilder: (context, index) {
         final meeting = filteredMeetings[index];
-        final isUpcoming = !_isPastMeeting(meeting, DateTime.now());
+        final isUpcoming = !isPastMeeting(meeting, DateTime.now());
 
         return _MeetingCard(
           meeting: meeting,
@@ -509,11 +502,10 @@ class _MeetingScreenState extends State<MeetingScreen> {
   }
 
   Widget _buildGridCard(Map<String, dynamic> meeting) {
-    final meetingDate = DateTime.parse(meeting['meeting_date']);
     return _MeetingCard(
       meeting: meeting,
       isAdmin: _isAdmin,
-      isUpcoming: meetingDate.isAfter(DateTime.now()),
+      isUpcoming: !isPastMeeting(meeting, DateTime.now()),
       selected: meeting['id'] == _selectedMeetingId,
       onDelete: _deleteMeeting,
       onJoin: _launchMeetingUrl,

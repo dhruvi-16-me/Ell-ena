@@ -156,6 +156,36 @@ void main() {
     expect(bars[4].barRods.single.toY, 1);
   });
 
+  testWidgets('upcoming leaves out meetings that have ended', (tester) async {
+    backend.table('meetings').addAll([
+      {
+        'id': 'm-ended',
+        'title': 'Ended standup',
+        'team_id': FakeBackend.teamId,
+        'meeting_date': iso(now.subtract(const Duration(hours: 3))),
+        'duration_minutes': 60,
+      },
+      {
+        'id': 'm-live',
+        'title': 'Live review',
+        'team_id': FakeBackend.teamId,
+        'meeting_date': iso(now.subtract(const Duration(minutes: 30))),
+        'duration_minutes': 60,
+      },
+    ]);
+    await pumpDashboard(tester);
+
+    expect(find.text('Ended standup'), findsNothing);
+    expect(find.text('Live review'), findsOneWidget);
+  });
+
+  testWidgets('overview has no made-up trend figure', (tester) async {
+    seedWorkspace();
+    await pumpDashboard(tester);
+
+    expect(find.text('+15%'), findsNothing);
+  });
+
   testWidgets('month view plots completions by day of month', (tester) async {
     seedWorkspace();
     await pumpDashboard(tester, themeMode: ThemeMode.dark);

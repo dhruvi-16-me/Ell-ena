@@ -492,9 +492,16 @@ void main() {
       };
       await openDetail(tester);
       expect(find.text('Repository not configured'), findsOneWidget);
+      expect(find.text('Created by'), findsOneWidget);
+      expect(find.text('Assigned to'), findsOneWidget);
 
+      await tester.ensureVisible(find.text('Retry GitHub sync'));
       await tester.tap(find.text('Retry GitHub sync'));
       await settle(tester);
+
+      // The refreshed row keeps the people already loaded.
+      expect(find.text('Created by'), findsOneWidget);
+      expect(find.text('Assigned to'), findsOneWidget);
 
       expect(backend.functionBodies('github-sync').single,
           {'ticket_id': 'tk-1'});

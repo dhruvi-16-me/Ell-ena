@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/meeting_status.dart';
 import '../../widgets/custom_widgets.dart';
 
 class MeetingDetailScreen extends StatefulWidget {
@@ -62,6 +63,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
     final meetingUrl = meeting?['meeting_url']?.toString() ?? '';
     if (meeting == null || meetingUrl.isEmpty || _isCallingBot) return;
 
+    final l10n = AppLocalizations.of(context);
     setState(() => _isCallingBot = true);
     try {
       final result = await _supabaseService.startBot(
@@ -71,25 +73,27 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
       if (!mounted) return;
       if (result['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Bot called'),
+          SnackBar(
+            content: Text(l10n.meetingBotCalled),
             backgroundColor: Colors.green,
           ),
         );
         await _loadMeetingDetails();
       } else {
+        debugPrint('Error calling bot: ${result['error']}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['error']?.toString() ?? 'Failed to call bot'),
+            content: Text(l10n.meetingCallBotFailed),
             backgroundColor: Colors.red,
           ),
         );
       }
     } catch (e) {
+      debugPrint('Error calling bot: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to call bot: $e'),
+          content: Text(l10n.meetingCallBotFailed),
           backgroundColor: Colors.red,
         ),
       );
@@ -103,6 +107,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
     final meetingUrl = meeting?['meeting_url']?.toString() ?? '';
     if (meeting == null || meetingUrl.isEmpty || _isFetchingSummary) return;
 
+    final l10n = AppLocalizations.of(context);
     setState(() => _isFetchingSummary = true);
     try {
       final result = await _supabaseService.fetchAndProcessTranscript(
@@ -112,26 +117,26 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
       if (!mounted) return;
       if (result['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Summary ready'),
+          SnackBar(
+            content: Text(l10n.meetingSummaryReady),
             backgroundColor: Colors.green,
           ),
         );
       } else {
+        debugPrint('Error fetching summary: ${result['error']}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              result['error']?.toString() ?? 'Failed to fetch summary',
-            ),
+            content: Text(l10n.meetingFetchSummaryFailed),
             backgroundColor: Colors.red,
           ),
         );
       }
     } catch (e) {
+      debugPrint('Error fetching summary: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to fetch summary: $e'),
+          content: Text(l10n.meetingFetchSummaryFailed),
           backgroundColor: Colors.red,
         ),
       );
@@ -529,8 +534,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
       );
     }
 
-    final meetingDateTime = DateTime.parse(_meeting!['meeting_date']);
-    final isUpcoming = meetingDateTime.isAfter(DateTime.now());
+    final isUpcoming = !isPastMeeting(_meeting!, DateTime.now());
     final dateFormat = DateFormat('EEEE, MMMM d, yyyy');
     final timeFormat = DateFormat('h:mm a');
     final canEdit = (_isAdmin || _isCreator) && isUpcoming;
@@ -883,11 +887,13 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                               )
                             : const Icon(Icons.smart_toy_outlined),
                         label: Text(
-                          _isCallingBot ? 'Calling bot…' : 'Call Bot',
+                          _isCallingBot
+                              ? l10n.meetingCallingBot
+                              : l10n.meetingCallBot,
                         ),
                       ),
                     ),
-                  if (_meeting!['bot_started_at'] != null || !isUpcoming)
+                  if (_meeting!['bot_started_at'] != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: SizedBox(
@@ -904,8 +910,8 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                               : const Icon(Icons.summarize_outlined),
                           label: Text(
                             _isFetchingSummary
-                                ? 'Fetching summary…'
-                                : 'Fetch Summary',
+                                ? l10n.meetingFetchingSummary
+                                : l10n.meetingFetchSummary,
                           ),
                         ),
                       ),
@@ -1136,6 +1142,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
   }
 
   Widget _buildSummaryView() {
+    final l10n = AppLocalizations.of(context);
     final summary = _summaryJson();
     final aiSummary = _meeting?['ai_summary']?.toString() ?? '';
 
@@ -1144,7 +1151,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _summarySection(
-            title: 'Summary',
+            title: l10n.meetingOverallSummary,
             child: Text(
               summary['overall_summary']?.toString() ?? '',
               style: TextStyle(
@@ -1154,15 +1161,15 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
             ),
           ),
           _summarySection(
-            title: 'Highlights',
+            title: l10n.meetingHighlights,
             child: _bulletList(summary['meeting_highlights']),
           ),
           _summarySection(
-            title: 'Key Points',
+            title: l10n.meetingKeyDiscussionPoints,
             child: _bulletList(summary['key_discussion_points']),
           ),
           _summarySection(
-            title: 'Action Items',
+            title: l10n.meetingActionItems,
             child: _actionItemList(summary['action_items']),
           ),
         ],
@@ -1171,7 +1178,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
 
     if (aiSummary.trim().isNotEmpty) {
       return _summarySection(
-        title: 'Summary',
+        title: l10n.meetingAiSummary,
         child: MarkdownBody(
           data: aiSummary,
           styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
@@ -1447,36 +1454,39 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: Text(
-          AppLocalizations.of(context).meetingDeleteTitle,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        content: Text(
-          AppLocalizations.of(context).meetingDeleteConfirm,
-          style: const TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context).cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _deleteMeeting();
-            },
-            child: Text(
-              AppLocalizations.of(context).meetingDelete,
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> _showDeleteConfirmation(BuildContext context) async {
+    if (await confirmMeetingDelete(context) && mounted) _deleteMeeting();
   }
+}
+
+/// Asks the user to confirm deleting a meeting; true when confirmed.
+Future<bool> confirmMeetingDelete(BuildContext context) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      title: Text(
+        AppLocalizations.of(context).meetingDeleteTitle,
+        style: Theme.of(context).textTheme.titleLarge,
+      ),
+      content: Text(
+        AppLocalizations.of(context).meetingDeleteConfirm,
+        style: const TextStyle(color: Colors.white70),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(AppLocalizations.of(context).cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(
+            AppLocalizations.of(context).meetingDelete,
+            style: const TextStyle(color: Colors.red),
+          ),
+        ),
+      ],
+    ),
+  );
+  return confirmed ?? false;
 }

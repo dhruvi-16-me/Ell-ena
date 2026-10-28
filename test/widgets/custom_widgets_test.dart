@@ -203,7 +203,6 @@ void main() {
     // Keyed rather than const, so each test builds a fresh instance.
     final skeletons = <String, Widget Function()>{
       'dashboard': () => DashboardLoadingSkeleton(key: UniqueKey()),
-      'workspace': () => WorkspaceLoadingSkeleton(key: UniqueKey()),
       'calendar': () => CalendarLoadingSkeleton(key: UniqueKey()),
     };
 

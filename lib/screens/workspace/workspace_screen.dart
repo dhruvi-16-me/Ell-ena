@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import '../tasks/task_screen.dart';
-import '../tasks/create_task_screen.dart';
 import '../tickets/ticket_screen.dart';
-import '../tickets/create_ticket_screen.dart';
 import '../../l10n/app_localizations.dart';
 import '../meetings/meeting_screen.dart';
-import '../meetings/create_meeting_screen.dart';
-import '../../services/supabase_service.dart';
-import '../../widgets/custom_widgets.dart';
 
 class WorkspaceScreen extends StatefulWidget {
   final int initialTabIndex;
@@ -26,7 +21,6 @@ class WorkspaceScreen extends StatefulWidget {
 class _WorkspaceScreenState extends State<WorkspaceScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -37,15 +31,6 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
       initialIndex: widget.initialTabIndex.clamp(0, 2),
     );
     _tabController.addListener(_handleTabChange);
-
-    // Simulate loading delay
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    });
   }
 
   @override
@@ -70,113 +55,13 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
       return;
     }
 
+    // Route-driven moves (see didUpdateWidget) are already in the route.
+    if (_tabController.index == widget.initialTabIndex.clamp(0, 2)) return;
     widget.onTabSelected?.call(_tabController.index);
-  }
-
-  void _showCreateDialog() {
-    final currentTab = _tabController.index;
-    if (currentTab == 0) {
-      _showCreateTaskDialog();
-    } else if (currentTab == 1) {
-      _showCreateTicketDialog();
-    } else if (currentTab == 2) {
-      _showCreateMeetingDialog();
-    }
-  }
-
-  void _showCreateTaskDialog() {
-    final l10n = AppLocalizations.of(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CreateTaskScreen()),
-    ).then((result) async {
-      if (result == true) {
-        // Reload team members cache first
-        final supabaseService = SupabaseService();
-        final userProfile = await supabaseService.getCurrentUserProfile();
-        if (userProfile != null && userProfile['team_id'] != null) {
-          await supabaseService.loadTeamMembers(userProfile['team_id']);
-        }
-
-        // Force refresh of the task screen
-        TaskScreen.refreshTasks();
-
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.workspaceTaskCreated),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    });
-  }
-
-  void _showCreateTicketDialog() {
-    final l10n = AppLocalizations.of(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CreateTicketScreen()),
-    ).then((result) async {
-      if (result == true) {
-        // Reload team members cache first
-        final supabaseService = SupabaseService();
-        final userProfile = await supabaseService.getCurrentUserProfile();
-        if (userProfile != null && userProfile['team_id'] != null) {
-          await supabaseService.loadTeamMembers(userProfile['team_id']);
-        }
-
-        // Force refresh of the ticket screen
-        TicketScreen.refreshTickets();
-
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.workspaceTicketCreated),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    });
-  }
-
-  void _showCreateMeetingDialog() {
-    final l10n = AppLocalizations.of(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) =>  CreateMeetingScreen()),
-    ).then((result) async {
-      if (result == true) {
-        // Reload team members cache first
-        final supabaseService = SupabaseService();
-        final userProfile = await supabaseService.getCurrentUserProfile();
-        if (userProfile != null && userProfile['team_id'] != null) {
-          await supabaseService.loadTeamMembers(userProfile['team_id']);
-        }
-
-        // Force refresh of the meeting screen
-        MeetingScreen.refreshMeetings();
-
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.workspaceMeetingCreated),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: const WorkspaceLoadingSkeleton(),
-      );
-    }
-
     final statusBarHeight = MediaQuery.of(context).padding.top;
     final l10n = AppLocalizations.of(context);
 
@@ -212,22 +97,34 @@ class _WorkspaceScreenState extends State<WorkspaceScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          TaskScreen(key: TaskScreen.globalKey),
-          TicketScreen(key: TicketScreen.globalKey),
-          MeetingScreen(key: MeetingScreen.globalKey),
+          _KeepAlive(child: TaskScreen(key: TaskScreen.globalKey)),
+          _KeepAlive(child: TicketScreen(key: TicketScreen.globalKey)),
+          _KeepAlive(child: MeetingScreen(key: MeetingScreen.globalKey)),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'workspace-add-button',
-        onPressed: _showCreateDialog,
-        tooltip: _tabController.index == 0
-            ? l10n.newTask
-            : _tabController.index == 1
-                ? l10n.newTicket
-                : l10n.newMeeting,
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.add),
-      ),
     );
+  }
+}
+
+/// Keeps a tab's page alive while another tab is shown, so switching back
+/// doesn't reload the list or reset its filter.
+class _KeepAlive extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAlive({required this.child});
+
+  @override
+  State<_KeepAlive> createState() => _KeepAliveState();
+}
+
+class _KeepAliveState extends State<_KeepAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

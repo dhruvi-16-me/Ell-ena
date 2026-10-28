@@ -324,7 +324,12 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       final result = await _supabaseService.syncTicketToGithub(widget.ticketId);
       if (result['ticket'] is Map) {
         setState(() {
-          _ticket = Map<String, dynamic>.from(result['ticket'] as Map);
+          // The synced row has no joined creator/assignee, so keep the
+          // ones already loaded.
+          _ticket = {
+            ...?_ticket,
+            ...Map<String, dynamic>.from(result['ticket'] as Map),
+          };
         });
       } else {
         await _loadTicketDetails();
@@ -376,8 +381,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     final errorText =
         GithubSyncUi.userErrorMessage(_ticket!['github_sync_error'] as String?);
     final rawError = _ticket!['github_sync_error'] as String?;
-    final ambiguous = rawError != null &&
-        rawError.contains('[ambiguous_create]');
+    final ambiguous =
+        rawError != null && rawError.contains('[ambiguous_create]');
 
     if (!GithubSyncUi.shouldShowSection(
       syncToGithub: syncToGithub,
@@ -402,10 +407,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         chipColor = Colors.grey.shade400;
     }
 
-    final canRetry = syncToGithub &&
-        issueId == null &&
-        status == 'failed' &&
-        !ambiguous;
+    final canRetry =
+        syncToGithub && issueId == null && status == 'failed' && !ambiguous;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -429,7 +432,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            GithubSyncUi.statusLabel(status),
+            GithubSyncUi.statusLabel(l10n, status),
             style: TextStyle(
               color: chipColor,
               fontSize: 12,
@@ -437,9 +440,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             ),
           ),
         ),
-        if (status == 'synced' &&
-            issueUrl != null &&
-            issueUrl.isNotEmpty) ...[
+        if (status == 'synced' && issueUrl != null && issueUrl.isNotEmpty) ...[
           const SizedBox(height: 8),
           TextButton.icon(
             onPressed: () => _openGithubIssue(issueUrl),
@@ -588,7 +589,9 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                             color: Theme.of(context).colorScheme.onSurface),
                       ),
                       subtitle: Text(
-                        isAdmin ? l10n.ticketRoleAdmin : l10n.ticketRoleTeamMember,
+                        isAdmin
+                            ? l10n.ticketRoleAdmin
+                            : l10n.ticketRoleTeamMember,
                         style: TextStyle(
                           color: isAdmin
                               ? Colors.orange.shade400
@@ -813,7 +816,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                   value: 'delete',
                   child: Row(
                     children: [
-                      const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      const Icon(Icons.delete_outline,
+                          color: Colors.red, size: 20),
                       const SizedBox(width: 8),
                       Text(l10n.ticketDeleteTitle,
                           style: const TextStyle(color: Colors.red)),
@@ -924,7 +928,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                _ticket!['category'] ?? l10n.ticketCategoryOther,
+                                _ticket!['category'] ??
+                                    l10n.ticketCategoryOther,
                                 style: TextStyle(
                                   color: Colors.purple.shade300,
                                   fontSize: 12,
@@ -945,7 +950,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          _ticket!['description'] ?? l10n.ticketNoDescriptionProvided,
+                          _ticket!['description'] ??
+                              l10n.ticketNoDescriptionProvided,
                           style: TextStyle(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1148,7 +1154,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  comment['user']['full_name'] ?? l10n.ticketUnknown,
+                                  comment['user']['full_name'] ??
+                                      l10n.ticketUnknown,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,

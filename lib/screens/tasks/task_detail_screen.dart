@@ -154,10 +154,23 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Future<void> _updateTaskApproval(String approvalStatus) async {
     final l10n = AppLocalizations.of(context);
     try {
-      await _supabaseService.updateTaskApproval(
+      final result = await _supabaseService.updateTaskApproval(
         taskId: widget.taskId,
         approvalStatus: approvalStatus,
       );
+
+      if (result['success'] != true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text(l10n.taskErrorUpdatingApproval('${result['error']}')),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
 
       // Reload task details
       _loadTaskDetails();

@@ -38,8 +38,7 @@ void main() {
       ),
       taskRow('t3', title: 'Build API', status: 'in_progress'),
       taskRow('t4', title: 'Ship v1', status: 'completed', dueDate: null),
-      // getTasks(filterByAssignment: true) discards its filters (postgrest
-      // builders are immutable), so tasks for other people are listed too.
+      // The workspace list shows the whole team's tasks, not just the user's.
       taskRow('t5',
           title: 'Pair review', assignedTo: 'user-2', approval: 'approved'),
       taskRow('t6',
@@ -318,7 +317,49 @@ void main() {
       expect(backend.bodiesFor('PATCH', '/rest/v1/tasks'), isEmpty);
     });
 
-    testWidgets('long-press reordering is not saved or kept', (tester) async {
+    testWidgets('a status drag the database ignores reports a failure',
+        (tester) async {
+      seedBoard();
+      await pumpTasks(tester);
+
+      // Someone else removed the row: the update matches nothing.
+      backend.table('tasks').removeWhere((t) => t['id'] == 't1');
+      final gesture =
+          await tester.startGesture(tester.getCenter(find.text('Plan sprint')));
+      await tester.pump();
+      final target = tester.getCenter(find.text('In Progress').last);
+      for (var i = 1; i <= 10; i++) {
+        final from = tester.getCenter(find.text('Plan sprint').first);
+        await gesture.moveTo(Offset.lerp(from, target, i / 10)!);
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await gesture.moveTo(target);
+      await tester.pump();
+      await gesture.up();
+      await settle(tester);
+
+      expect(
+        find.textContaining('Error updating task status'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a failed approval shows the error', (tester) async {
+      seedBoard();
+      await pumpTasks(tester);
+
+      backend.failures['tasks'] = 500;
+      await tester.tap(find.byTooltip('Approve'));
+      await settle(tester);
+
+      expect(
+        find.textContaining('Error updating task approval'),
+        findsOneWidget,
+      );
+      expect(backend.table('tasks').first['approval_status'], 'pending');
+    });
+
+    testWidgets('long-press reordering is kept but not saved', (tester) async {
       seedBoard();
       await pumpTasks(tester);
 
@@ -339,12 +380,11 @@ void main() {
       await gesture.up();
       await settle(tester);
 
-      // onReorder only reorders a list rebuilt from the loaded tasks on the
-      // next build, so the original order comes back.
+      // The new order stays on screen; order isn't stored server-side.
       expect(backend.bodiesFor('PATCH', '/rest/v1/tasks'), isEmpty);
       expect(
         tester.getTopLeft(find.text('Plan sprint')).dy,
-        lessThan(tester.getTopLeft(find.text('Fix login')).dy),
+        greaterThan(tester.getTopLeft(find.text('Fix login')).dy),
       );
     });
 

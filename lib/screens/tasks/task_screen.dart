@@ -89,7 +89,7 @@ class _TaskScreenState extends State<TaskScreen> {
 
   Future<void> _loadTasks() async {
     try {
-      final tasks = await _supabaseService.getTasks(filterByAssignment: true);
+      final tasks = await _supabaseService.getTasks();
 
       if (mounted) {
         setState(() {
@@ -110,13 +110,21 @@ class _TaskScreenState extends State<TaskScreen> {
   Future<void> _updateTaskStatus(String taskId, String status) async {
     final l10n = AppLocalizations.of(context);
     try {
-      await _supabaseService.updateTaskStatus(
+      final result = await _supabaseService.updateTaskStatus(
         taskId: taskId,
         status: status,
       );
 
       // Reload tasks after update
       _loadTasks();
+      if (result['success'] != true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.taskErrorUpdatingStatus('${result['error']}')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('Error updating task status: $e');
       if (!mounted) return;
@@ -132,13 +140,21 @@ class _TaskScreenState extends State<TaskScreen> {
   Future<void> _updateTaskApproval(String taskId, String approvalStatus) async {
     final l10n = AppLocalizations.of(context);
     try {
-      await _supabaseService.updateTaskApproval(
+      final result = await _supabaseService.updateTaskApproval(
         taskId: taskId,
         approvalStatus: approvalStatus,
       );
 
       // Reload tasks after update
       _loadTasks();
+      if (result['success'] != true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.taskErrorUpdatingApproval('${result['error']}')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('Error updating task approval: $e');
       if (!mounted) return;
@@ -304,6 +320,11 @@ class _TaskScreenState extends State<TaskScreen> {
               setState(() {
                 final item = filteredTasks.removeAt(oldIndex);
                 filteredTasks.insert(newIndex, item);
+                // The list is rebuilt from _tasks, so keep the new order there.
+                _tasks = [
+                  ..._tasks.where((task) => task['status'] != _selectedStatus),
+                  ...filteredTasks,
+                ];
               });
             },
             itemBuilder: (context, index) {

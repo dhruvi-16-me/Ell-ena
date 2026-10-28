@@ -443,21 +443,46 @@ void main() {
     });
   });
 
-  testWidgets('a failed follow-up still confirms the action', (tester) async {
+  Future<void> askWithoutSummary(
+    WidgetTester tester,
+    String name,
+    Map<String, dynamic> args,
+  ) async {
+    await pumpChat(tester);
+    backend.geminiHandler = (body) {
+      if (body.containsKey('tools')) {
+        return FakeBackend.geminiCall(name, args);
+      }
+      throw FakeHttpError(503);
+    };
+
+    await tester.enterText(find.byType(TextField), 'Do it');
+    await tester.tap(find.byTooltip('Send message'));
+    await settle(tester, frames: 20);
+  }
+
+  testWidgets('a failed follow-up still confirms a completed action',
+      (tester) async {
     await withFakeHttp(() async {
-      await pumpChat(tester);
-      backend.geminiHandler = (body) {
-        if (body.containsKey('tools')) {
-          return FakeBackend.geminiCall('query_tasks', {});
-        }
-        throw FakeHttpError(503);
-      };
+      await askWithoutSummary(tester, 'query_tasks', {});
 
-      await tester.enterText(find.byType(TextField), 'List tasks');
-      await tester.tap(find.byTooltip('Send message'));
-      await settle(tester, frames: 20);
+      expect(
+          find.text('Done! Your request has been completed.'), findsOneWidget);
+    });
+  });
 
-      expect(find.text('Function executed successfully.'), findsOneWidget);
+  testWidgets('a failed follow-up does not claim a failed action succeeded',
+      (tester) async {
+    await withFakeHttp(() async {
+      await askWithoutSummary(
+          tester, 'modify_item', {'item_type': 'task', 'item_id': 'x'});
+
+      expect(find.text('Done! Your request has been completed.'), findsNothing);
+      expect(
+        find.text(
+            'Sorry, I encountered an error while processing your request.'),
+        findsOneWidget,
+      );
     });
   });
 }

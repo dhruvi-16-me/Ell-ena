@@ -67,10 +67,13 @@ void main() {
       backend.rpcs['check_team_code_exists'] = (_) => true;
       await pumpRoutedScreen(tester, const SignupScreen());
       await enter(
-          tester, ['ABC123', 'Eve', 'eve@example.com', 'secret1', 'secret1']);
+          tester, ['abc123', 'Eve', 'eve@example.com', 'secret1', 'secret1']);
       await tapText(tester, l10n.authJoinTeam);
       await tester.pumpAndSettle();
 
+      expect(backend.bodiesFor('POST', '/rest/v1/rpc/check_team_code_exists'), [
+        {'code': 'ABC123'}
+      ]);
       final otp = backend.bodiesFor('POST', '/auth/v1/otp').single as Map;
       expect(otp['email'], 'eve@example.com');
       final verify =

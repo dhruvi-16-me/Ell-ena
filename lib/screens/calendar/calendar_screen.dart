@@ -665,9 +665,9 @@ class _CalendarScreenState extends State<CalendarScreen>
         break;
     }
 
-    // Refresh events if something was updated
+    // Bypass the cache so the edit shows up straight away
     if (result == true) {
-      await _loadEventsWithCache(); // Use cache loading
+      await refreshFromShell();
     }
   }
 
@@ -767,16 +767,22 @@ class _CalendarScreenState extends State<CalendarScreen>
         result = await openCreateFlow(context, CreateMeetingScreen());
         break;
       case EventType.task:
-        result = await openCreateFlow(context, CreateTaskScreen());
+        // Due dates can't be in the past, so only prefill today or later.
+        final today = DateUtils.dateOnly(DateTime.now());
+        final day = DateUtils.dateOnly(_selectedDay!);
+        result = await openCreateFlow(
+          context,
+          CreateTaskScreen(initialDueDate: day.isBefore(today) ? null : day),
+        );
         break;
       case EventType.ticket:
         result = await openCreateFlow(context, CreateTicketScreen());
         break;
     }
 
-    // Refresh events if something was created
+    // Bypass the cache so the new item shows up straight away
     if (result == true) {
-      await _loadEventsWithCache(); // Use cache loading
+      await refreshFromShell();
     }
   }
 

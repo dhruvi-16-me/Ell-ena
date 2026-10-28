@@ -179,6 +179,19 @@ void main() {
       expect(find.text('REJECTED'), findsOneWidget);
     });
 
+    testWidgets('a failed approval shows the error', (tester) async {
+      seed([ticketRow(id: 'a', title: 'Pending A')]);
+      await pumpTickets(tester);
+
+      backend.failures['tickets'] = 500;
+      await tester.tap(find.byTooltip('Approve'));
+      await settle(tester);
+
+      expect(find.textContaining('Error updating ticket approval'),
+          findsOneWidget);
+      expect(backend.table('tickets').single['approval_status'], 'pending');
+    });
+
     testWidgets('members see no approval and delete only their own tickets',
         (tester) async {
       await resetInTest(tester, role: 'member');
@@ -252,6 +265,27 @@ void main() {
       expect(find.text('Movable'), findsNothing);
     });
 
+    testWidgets('a status drag the database ignores reports a failure',
+        (tester) async {
+      seed([ticketRow(id: 'a', title: 'Movable')]);
+      await pumpTickets(tester);
+
+      // Someone else removed the row: the update matches nothing.
+      backend.table('tickets').clear();
+      final gesture =
+          await tester.startGesture(tester.getCenter(find.text('Movable')));
+      await tester.pump(const Duration(milliseconds: 50));
+      await gesture.moveTo(tester.getCenter(tab('In Progress')));
+      await tester.pump(const Duration(milliseconds: 50));
+      await gesture.moveTo(tester.getCenter(tab('In Progress')));
+      await tester.pump();
+      await gesture.up();
+      await settle(tester);
+
+      expect(find.textContaining('Error updating ticket status'),
+          findsOneWidget);
+    });
+
     testWidgets('dropping a card on its own status changes nothing',
         (tester) async {
       seed([ticketRow(id: 'a', title: 'Stay')]);
@@ -271,7 +305,7 @@ void main() {
       expect(find.text('Stay'), findsOneWidget);
     });
 
-    testWidgets('a long-press reorder sends nothing and keeps the stored order',
+    testWidgets('a long-press reorder sends nothing and keeps the new order',
         (tester) async {
       seed([
         ticketRow(id: 'a', title: 'First'),
@@ -296,10 +330,9 @@ void main() {
       await gesture.up();
       await settleRoute(tester);
 
-      // The reorder works on a filtered copy, so the next build restores the
-      // stored order.
+      // The new order stays on screen; order isn't stored server-side.
       expect(tester.getTopLeft(find.text('First')).dy,
-          lessThan(tester.getTopLeft(find.text('Second')).dy));
+          greaterThan(tester.getTopLeft(find.text('Second')).dy));
       expect(backend.bodiesFor('PATCH', '/rest/v1/tickets'), isEmpty);
       expect(tester.takeException(), isNull);
     });

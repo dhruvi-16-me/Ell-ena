@@ -33,13 +33,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   late AnimationController _waveformController;
   late final stt.SpeechToText _speech;
   bool _speechAvailable = false;
+  BuildContext? _listeningDialogContext;
 
   final SupabaseService _supabaseService = SupabaseService();
 
-  AIService get _aiService => ref.read(aiServiceProvider);
-  ChatController get _chat => ref.read(chatControllerProvider.notifier);
+  // A reply can arrive after the user leaves this screen, when `ref` is no
+  // longer usable. The app's container outlives the screen, so read through it.
+  late final ProviderContainer _container =
+      ProviderScope.containerOf(context, listen: false);
+
+  AIService get _aiService => _container.read(aiServiceProvider);
+  ChatController get _chat => _container.read(chatControllerProvider.notifier);
   List<Map<String, dynamic>> get _teamMembers =>
-      ref.read(chatControllerProvider).teamMembers;
+      _container.read(chatControllerProvider).teamMembers;
 
   @override
   void initState() {
@@ -76,25 +82,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         if (status == 'done' || status == 'notListening') {
           if (mounted) {
             setState(() => _isListening = false);
-            // Dismiss dialog if open
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
+            _closeListeningDialog();
           }
         }
       },
       onError: (error) {
-        setState(() => _isListening = false);
         if (mounted) {
           setState(() => _isListening = false);
-          if (Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
+          _closeListeningDialog();
         }
       },
     );
 
     if (mounted) setState(() {});
+  }
+
+  /// Pops only the listening dialog, once, whichever event closes it first.
+  void _closeListeningDialog() {
+    final dialogContext = _listeningDialogContext;
+    _listeningDialogContext = null;
+    if (dialogContext != null && dialogContext.mounted) {
+      Navigator.of(dialogContext).pop();
+    }
   }
 
   Future<void> _initializeServices() async {
@@ -251,9 +260,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
-    if (ref.read(chatControllerProvider).isProcessing) return;
+    if (_container.read(chatControllerProvider).isProcessing) return;
 
     final userMessage = _messageController.text;
+    final l10n = AppLocalizations.of(context);
     _messageController.clear();
 
     _chat.addMessage(
@@ -265,7 +275,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     try {
       await _chat.retrieveForQuery(userMessage);
-      final chatState = ref.read(chatControllerProvider);
+      final chatState = _container.read(chatControllerProvider);
 
       final response = await _aiService.generateChatResponse(
         userMessage,
@@ -280,27 +290,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           response['function_name'],
           response['arguments'],
           response['raw_response'],
+          l10n,
         );
       } else {
         _chat.addMessage(
           ChatMessage(
-            text: response['content'] ??
-                "Sorry, I encountered an error. Please try again later.",
+            text: response['type'] == 'message'
+                ? response['content'] ?? l10n.chatReplyError
+                : l10n.chatRequestError,
             isUser: false,
             timestamp: DateTime.now(),
           ),
         );
-        _chat.setProcessing(false);
       }
     } catch (e) {
       debugPrint('Error sending message: $e');
       _chat.addMessage(
         ChatMessage(
-          text: "Sorry, I encountered an error. Please try again later.",
+          text: l10n.chatReplyError,
           isUser: false,
           timestamp: DateTime.now(),
         ),
       );
+    } finally {
       _chat.setProcessing(false);
     }
 
@@ -311,6 +323,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     String functionName,
     Map<String, dynamic> arguments,
     String rawResponse,
+    AppLocalizations l10n,
   ) async {
     _chat.addMessage(
       ChatMessage(
@@ -358,12 +371,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         arguments: arguments,
         rawResponse: rawResponse,
         result: result,
-        ragContext: ref.read(chatControllerProvider).aiContext,
+        ragContext: _container.read(chatControllerProvider).aiContext,
       );
 
       _chat.addMessage(
         ChatMessage(
-          text: responseMessage,
+          text: responseMessage ??
+              (result['success'] == true
+                  ? l10n.chatRequestDone
+                  : l10n.chatRequestError),
           isUser: false,
           timestamp: DateTime.now(),
         ),
@@ -384,18 +400,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           ),
         );
       }
-
-      _chat.setProcessing(false);
     } catch (e) {
       debugPrint('Error handling function call: $e');
       _chat.addMessage(
         ChatMessage(
-          text: "Sorry, I encountered an error while processing your request.",
+          text: l10n.chatRequestError,
           isUser: false,
           timestamp: DateTime.now(),
         ),
       );
-      _chat.setProcessing(false);
     }
 
     _scrollToBottom();
@@ -461,7 +474,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       return result;
     } catch (e) {
       debugPrint('Error creating task: $e');
-      return {'success': false, 'error': e.toString()};
+      return {'success': false, 'error': 'Unable to create the task.'};
     }
   }
 
@@ -520,7 +533,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       return result;
     } catch (e) {
       debugPrint('Error creating ticket: $e');
-      return {'success': false, 'error': e.toString()};
+      return {'success': false, 'error': 'Unable to create the ticket.'};
     }
   }
 
@@ -557,7 +570,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       return result;
     } catch (e) {
       debugPrint('Error creating meeting: $e');
-      return {'success': false, 'error': e.toString()};
+      return {'success': false, 'error': 'Unable to create the meeting.'};
     }
   }
 
@@ -957,7 +970,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       return result;
     } catch (e) {
       debugPrint('Error modifying item: $e');
-      return {'success': false, 'error': e.toString()};
+      return {'success': false, 'error': 'Unable to update the item.'};
     }
   }
 
@@ -991,7 +1004,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+      if (mounted && _scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
@@ -1112,7 +1125,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       debugPrint('Error navigating to item: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context).chatNavigationError('$e')),
+          content: Text(AppLocalizations.of(context).chatCouldNotOpenItem),
           backgroundColor: Colors.red,
         ),
       );
@@ -1138,10 +1151,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       showDialog(
         context: context,
         barrierDismissible: true,
-        builder: (context) => _buildListeningDialog(),
+        builder: (dialogContext) {
+          _listeningDialogContext = dialogContext;
+          return _buildListeningDialog();
+        },
       ).then((_) {
+        _listeningDialogContext = null;
         // Stop listening if dialog was dismissed
-        if (_isListening && _speech.isListening) {
+        if (mounted && _isListening && _speech.isListening) {
           _speech.stop();
           setState(() => _isListening = false);
         }
@@ -1151,6 +1168,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     setState(() => _isListening = true);
     await _speech.listen(
       onResult: (result) {
+        if (!mounted) return;
         setState(() {
           _messageController.text = result.recognizedWords;
         });

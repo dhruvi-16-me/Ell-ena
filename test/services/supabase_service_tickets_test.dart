@@ -50,11 +50,7 @@ void main() {
       ]);
       final service = await signedInService();
 
-      final tickets = await service.getTickets(
-        filterByAssignment: true,
-        filterByStatus: 'open',
-        filterByPriority: 'high',
-      );
+      final tickets = await service.getTickets();
 
       expect(tickets.map((t) => t['id']), ['b', 'a']);
       expect(tickets.first['creator']['full_name'], 'Ada');
@@ -62,12 +58,38 @@ void main() {
       expect(tickets.last['assignee']['full_name'], 'Bob');
     });
 
-    test('members can filter by assignment', () async {
-      backend.table('users').first['role'] = 'member';
-      backend.table('tickets').add(ticket('a'));
+    test('applies the assignment, status and priority filters', () async {
+      backend.table('tickets').addAll([
+        ticket('match', assignedTo: FakeBackend.userId),
+        ticket('someone-else'),
+        {
+          ...ticket('closed', assignedTo: FakeBackend.userId),
+          'status': 'closed'
+        },
+        {...ticket('low', assignedTo: FakeBackend.userId), 'priority': 'low'},
+      ]);
       final service = await signedInService();
 
-      expect(await service.getTickets(filterByAssignment: true), hasLength(1));
+      final tickets = await service.getTickets(
+        filterByAssignment: true,
+        filterByStatus: 'open',
+        filterByPriority: 'high',
+      );
+
+      expect(tickets.map((t) => t['id']), ['match']);
+    });
+
+    test('members can filter by assignment', () async {
+      backend.table('users').first['role'] = 'member';
+      backend.table('tickets').addAll([
+        ticket('mine', assignedTo: FakeBackend.userId),
+        ticket('theirs'),
+      ]);
+      final service = await signedInService();
+
+      final tickets = await service.getTickets(filterByAssignment: true);
+
+      expect(tickets.map((t) => t['id']), ['mine']);
     });
 
     test('returns nothing without a team or when the query fails', () async {
@@ -317,6 +339,28 @@ void main() {
             ticketId: 'k', approvalStatus: 'approved'))['success'],
         isFalse,
       );
+    });
+
+    test('updates that row-level security blocks report failure', () async {
+      backend.table('tickets').add(ticket('k1'));
+      final service = await signedInService(
+        intercept: (r) => r.method == 'PATCH' ? http.Response('[]', 200) : null,
+      );
+      const blocked = {
+        'success': false,
+        'error': 'Ticket not found or permission denied',
+      };
+
+      expect(await service.updateTicketStatus(ticketId: 'k1', status: 'x'),
+          blocked);
+      expect(await service.updateTicketPriority(ticketId: 'k1', priority: 'x'),
+          blocked);
+      expect(await service.assignTicket(ticketId: 'k1', userId: 'u'), blocked);
+      expect(
+          await service.updateTicketApproval(
+              ticketId: 'k1', approvalStatus: 'approved'),
+          blocked);
+      expect(backend.table('tickets').single['status'], 'open');
     });
 
     test('only admins can change approval', () async {

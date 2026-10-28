@@ -106,8 +106,9 @@ class _SignupScreenState extends State<SignupScreen>
 
     try {
       // First check if the team exists
-      final teamExists =
-          await _supabaseService.teamExists(_teamIdController.text);
+      final teamCode =
+          SupabaseService.normalizeTeamCode(_teamIdController.text);
+      final teamExists = await _supabaseService.teamExists(teamCode);
 
       if (!teamExists) {
         if (mounted) {
@@ -140,7 +141,7 @@ class _SignupScreenState extends State<SignupScreen>
             email: _emailController.text,
             verifyType: 'signup_join',
             userData: {
-              'teamId': _teamIdController.text,
+              'teamId': teamCode,
               'fullName': _nameController.text,
               'password': _passwordController.text,
             },
@@ -223,10 +224,10 @@ class _SignupScreenState extends State<SignupScreen>
             label: l10n.authTeamIdLabel,
             icon: Icons.people_outline,
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null || value.trim().isEmpty) {
                 return l10n.authEnterTeamId;
               }
-              if (value.length != 6) {
+              if (value.trim().length != 6) {
                 return l10n.authTeamIdLength;
               }
               return null;

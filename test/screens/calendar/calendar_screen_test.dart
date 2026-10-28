@@ -232,7 +232,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await settle(tester);
     expect(find.byType(TaskDetailScreen), findsNothing);
-    // An update reloads the calendar (from the still-fresh cache).
+    // An update reloads the calendar from the network.
     expect(find.text('Write report'), findsOneWidget);
 
     await tester.tap(find.text('Fix login'));
@@ -271,15 +271,42 @@ void main() {
 
       final screen = find.byType(option[1] as Type);
       expect(screen, findsOneWidget);
-      // Something was created: the calendar reloads with it.
+      // Something was created: the calendar reloads with it, even though
+      // its cache is still fresh.
       seedEvents();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('calendar_last_fetch_time');
       Navigator.of(tester.element(screen)).pop(true);
       await settle(tester);
       expect(find.text('Standup'), findsOneWidget);
     });
   }
+
+  testWidgets('a task created from a day starts with that due date',
+      (tester) async {
+    await pumpCalendar(tester);
+
+    await openSlot(tester, '3:00 am');
+    await tester.tap(find.text('Create a Task'));
+    await settle(tester);
+
+    final screen =
+        tester.widget<CreateTaskScreen>(find.byType(CreateTaskScreen));
+    expect(screen.initialDueDate, today);
+  });
+
+  testWidgets('a task created from a past day has no due date prefilled',
+      (tester) async {
+    await pumpCalendar(tester);
+
+    await tester.tap(find.text('1').first);
+    await settle(tester);
+    await openSlot(tester, '3:00 am');
+    await tester.tap(find.text('Create a Task'));
+    await settle(tester);
+
+    final screen =
+        tester.widget<CreateTaskScreen>(find.byType(CreateTaskScreen));
+    expect(screen.initialDueDate, isNull);
+  }, skip: today.day == 1);
 
   testWidgets('"Create with AI" opens chat with a prefilled request',
       (tester) async {

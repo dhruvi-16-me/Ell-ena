@@ -191,7 +191,9 @@ void main() {
 
       await tapText(tester, 'Call Bot');
 
-      expect(find.text('Vexa is down'), findsOneWidget);
+      expect(find.text("Couldn't call the bot. Please try again."),
+          findsOneWidget);
+      expect(find.textContaining('Vexa'), findsNothing);
       expect(find.text('Call Bot'), findsOneWidget);
     });
 
@@ -213,6 +215,49 @@ void main() {
       expect(find.text('Meeting URL'), findsNothing);
       expect(find.text('Description'), findsNothing);
       expect(find.text('Join Meeting'), findsNothing);
+    });
+  });
+
+  group('in-progress meeting', () {
+    testWidgets('stays upcoming and editable until it ends', (tester) async {
+      // Started ten minutes ago; the fixture lasts 30 minutes.
+      seed(offset: const Duration(minutes: -10));
+      await pumpDetail(tester);
+
+      expect(find.text('UPCOMING'), findsOneWidget);
+      expect(find.byTooltip('Edit Meeting'), findsOneWidget);
+      expect(find.byTooltip('Delete Meeting'), findsOneWidget);
+      expect(find.text('Join Meeting'), findsOneWidget);
+    });
+
+    testWidgets('becomes past once its duration is over', (tester) async {
+      seed(offset: const Duration(minutes: -31));
+      await pumpDetail(tester);
+
+      expect(find.text('PAST'), findsOneWidget);
+      expect(find.byTooltip('Edit Meeting'), findsNothing);
+    });
+  });
+
+  group('localisation', () {
+    testWidgets('bot controls and summary titles follow the app language',
+        (tester) async {
+      seed(
+        offset: const Duration(days: -2),
+        extra: {'meeting_summary_json': _summary},
+      );
+      await pumpApp(
+        tester,
+        const MeetingDetailScreen(meetingId: 'm1'),
+        size: tallPhone,
+        locale: const Locale('hi'),
+      );
+      await settle(tester);
+
+      expect(find.text('बॉट बुलाएं'), findsOneWidget);
+      expect(find.text('मीटिंग की मुख्य बातें'), findsOneWidget);
+      expect(find.text('Call Bot'), findsNothing);
+      expect(find.text('Highlights'), findsNothing);
     });
   });
 
@@ -243,7 +288,8 @@ void main() {
     testWidgets('pending for a past Meet call with no bot', (tester) async {
       await expectStatus(tester, {}, 'Pending');
       expect(find.text('PAST'), findsOneWidget);
-      expect(find.text('Fetch Summary'), findsOneWidget);
+      // Nothing to fetch until a bot has joined.
+      expect(find.text('Fetch Summary'), findsNothing);
     });
   });
 
@@ -412,7 +458,10 @@ void main() {
 
     testWidgets('fetches, summarizes, and embeds the transcript',
         (tester) async {
-      seed(offset: const Duration(days: -2));
+      seed(
+        offset: const Duration(days: -2),
+        extra: {'bot_started_at': '2026-10-01T00:00:00Z'},
+      );
       backend.functions['fetch-transcript'] = (_) => {'segments': 3};
       backend.functions['summarize-transcription'] = (_) {
         backend.table('meetings').single
@@ -434,16 +483,24 @@ void main() {
       expect(find.text('Transcription: Completed'), findsOneWidget);
     });
 
-    testWidgets('shows why the transcript could not be fetched',
+    testWidgets('says the summary could not be fetched without raw errors',
         (tester) async {
-      seed(offset: const Duration(days: -2));
+      seed(
+        offset: const Duration(days: -2),
+        extra: {'bot_started_at': '2026-10-01T00:00:00Z'},
+      );
       backend.functions['fetch-transcript'] =
           (_) => throw FakeHttpError(404, {'error': 'No transcript yet'});
       await pumpDetail(tester);
 
       await tapText(tester, 'Fetch Summary');
 
-      expect(find.text('No transcript yet'), findsOneWidget);
+      expect(
+        find.text(
+            "Couldn't fetch the summary. The transcript may not be ready yet, so try again later."),
+        findsOneWidget,
+      );
+      expect(find.text('No transcript yet'), findsNothing);
       expect(find.text('Fetch Summary'), findsOneWidget);
     });
   });
@@ -458,7 +515,7 @@ void main() {
 
     testWidgets('saves the edited fields and returns to the details',
         (tester) async {
-      seed(extra: {'transcription': 'Old notes', 'ai_summary': 'Old summary'});
+      seed();
       await pumpDetail(tester);
 
       await tester.tap(find.byTooltip('Edit Meeting'));
@@ -476,8 +533,6 @@ void main() {
       expect(patch['description'], 'New agenda');
       expect(patch['duration_minutes'], 90);
       expect(patch['meeting_url'], 'https://meet.google.com/abc-defg-hij');
-      expect(patch['transcription'], 'Old notes');
-      expect(patch['ai_summary'], 'Old summary');
       expect(find.text('Meeting Details'), findsOneWidget);
       expect(find.text('Renamed sync'), findsOneWidget);
     });

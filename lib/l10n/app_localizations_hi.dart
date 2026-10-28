@@ -863,11 +863,6 @@ class AppLocalizationsHi extends AppLocalizations {
       'आइटम पर नहीं जा सके। विवरण उपलब्ध नहीं है।';
 
   @override
-  String chatNavigationError(String error) {
-    return 'नेविगेशन त्रुटि: $error';
-  }
-
-  @override
   String get chatSpeechNotAvailable => 'इस डिवाइस पर वॉइस पहचान उपलब्ध नहीं है';
 
   @override
@@ -1094,11 +1089,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get profileStandardAccess => 'सामान्य टीम सदस्य एक्सेस';
-
-  @override
-  String profileErrorLoadingMembers(String error) {
-    return 'टीम सदस्यों को लोड करने में त्रुटि: $error';
-  }
 
   @override
   String profileTeamMembersTitle(String teamName) {
@@ -1709,4 +1699,63 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get shellSupportUs => 'हमें सपोर्ट करें';
+
+  @override
+  String get profileMembersLoadFailed => 'टीम सदस्यों को लोड नहीं किया जा सका';
+
+  @override
+  String get profileMembersLoadFailedHint =>
+      'अपना कनेक्शन जांचें और फिर से कोशिश करें।';
+
+  @override
+  String get profileRetry => 'फिर से कोशिश करें';
+
+  @override
+  String get meetingBotCalled => 'बॉट बुलाया गया';
+
+  @override
+  String get meetingCallBotFailed =>
+      'बॉट को नहीं बुला सके। कृपया फिर से कोशिश करें।';
+
+  @override
+  String get meetingCallBot => 'बॉट बुलाएं';
+
+  @override
+  String get meetingCallingBot => 'बॉट बुलाया जा रहा है…';
+
+  @override
+  String get meetingSummaryReady => 'सारांश तैयार है';
+
+  @override
+  String get chatReplyError =>
+      'माफ़ करें, कोई त्रुटि हुई। कृपया बाद में फिर से कोशिश करें।';
+
+  @override
+  String get chatRequestError =>
+      'माफ़ करें, आपका अनुरोध प्रोसेस करते समय कोई त्रुटि हुई।';
+
+  @override
+  String get chatRequestDone => 'हो गया! आपका अनुरोध पूरा हो गया है।';
+
+  @override
+  String get meetingFetchSummaryFailed =>
+      'सारांश नहीं मिल सका। हो सकता है ट्रांसक्रिप्ट अभी तैयार न हो, इसलिए बाद में फिर से कोशिश करें।';
+
+  @override
+  String get meetingFetchSummary => 'सारांश प्राप्त करें';
+
+  @override
+  String get meetingFetchingSummary => 'सारांश प्राप्त किया जा रहा है…';
+
+  @override
+  String get ticketGithubSyncPending => 'GitHub सिंक जारी है';
+
+  @override
+  String get ticketGithubSynced => 'GitHub पर सिंक हो गया';
+
+  @override
+  String get ticketGithubNotSynced => 'GitHub पर सिंक नहीं किया गया';
+
+  @override
+  String get ticketGithubSyncStatusFailed => 'GitHub सिंक विफल रहा';
 }

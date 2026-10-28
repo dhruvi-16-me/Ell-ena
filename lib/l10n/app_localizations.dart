@@ -1628,12 +1628,6 @@ abstract class AppLocalizations {
   /// **'Could not navigate to the item. Details missing.'**
   String get chatCouldNotNavigate;
 
-  /// SnackBar when navigating to an item throws.
-  ///
-  /// In en, this message translates to:
-  /// **'Navigation error: {error}'**
-  String chatNavigationError(String error);
-
   /// SnackBar when speech-to-text is unavailable.
   ///
   /// In en, this message translates to:
@@ -2065,12 +2059,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Standard team member access'**
   String get profileStandardAccess;
-
-  /// SnackBar when loading team members fails.
-  ///
-  /// In en, this message translates to:
-  /// **'Error loading team members: {error}'**
-  String profileErrorLoadingMembers(String error);
 
   /// Team members screen app bar title.
   ///
@@ -3127,6 +3115,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Support Us'**
   String get shellSupportUs;
+
+  /// Team members screen error state when the members request fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load team members'**
+  String get profileMembersLoadFailed;
+
+  /// Hint under the team members load error.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get profileMembersLoadFailedHint;
+
+  /// Button that reloads the team members after a failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get profileRetry;
+
+  /// Snackbar after the transcription bot is dispatched to a meeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Bot called'**
+  String get meetingBotCalled;
+
+  /// Snackbar when dispatching the transcription bot fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t call the bot. Please try again.'**
+  String get meetingCallBotFailed;
+
+  /// Button that sends the transcription bot to the meeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Call Bot'**
+  String get meetingCallBot;
+
+  /// Call Bot button label while the request is running.
+  ///
+  /// In en, this message translates to:
+  /// **'Calling bot…'**
+  String get meetingCallingBot;
+
+  /// Snackbar after the meeting transcript was summarized.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary ready'**
+  String get meetingSummaryReady;
+
+  /// Chat reply shown when sending a message fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorry, I encountered an error. Please try again later.'**
+  String get chatReplyError;
+
+  /// Chat reply shown when Ell-ena could not answer or could not complete a requested action.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorry, I encountered an error while processing your request.'**
+  String get chatRequestError;
+
+  /// Chat reply confirming a completed action when no AI summary is available.
+  ///
+  /// In en, this message translates to:
+  /// **'Done! Your request has been completed.'**
+  String get chatRequestDone;
+
+  /// Snackbar when fetching or summarizing the meeting transcript fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t fetch the summary. The transcript may not be ready yet, so try again later.'**
+  String get meetingFetchSummaryFailed;
+
+  /// Button that fetches and summarizes the meeting transcript.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch Summary'**
+  String get meetingFetchSummary;
+
+  /// Fetch Summary button label while the request is running.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching summary…'**
+  String get meetingFetchingSummary;
+
+  /// Ticket GitHub sync status chip while the sync is running.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub sync in progress'**
+  String get ticketGithubSyncPending;
+
+  /// Ticket GitHub sync status chip after a successful sync.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced to GitHub'**
+  String get ticketGithubSynced;
+
+  /// Ticket GitHub sync status chip when no sync was requested.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced to GitHub'**
+  String get ticketGithubNotSynced;
+
+  /// Ticket GitHub sync status chip after a failed sync.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub sync failed'**
+  String get ticketGithubSyncStatusFailed;
 }
 
 class _AppLocalizationsDelegate

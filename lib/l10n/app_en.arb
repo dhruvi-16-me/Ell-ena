@@ -1153,15 +1153,6 @@
   "@chatCouldNotNavigate": {
     "description": "SnackBar when a created item card cannot be opened."
   },
-  "chatNavigationError": "Navigation error: {error}",
-  "@chatNavigationError": {
-    "description": "SnackBar when navigating to an item throws.",
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
   "chatSpeechNotAvailable": "Speech recognition not available on this device",
   "@chatSpeechNotAvailable": {
     "description": "SnackBar when speech-to-text is unavailable."
@@ -1469,15 +1460,6 @@
   "profileStandardAccess": "Standard team member access",
   "@profileStandardAccess": {
     "description": "Role description for members."
-  },
-  "profileErrorLoadingMembers": "Error loading team members: {error}",
-  "@profileErrorLoadingMembers": {
-    "description": "SnackBar when loading team members fails.",
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
   },
   "profileTeamMembersTitle": "{teamName} Members",
   "@profileTeamMembersTitle": {
@@ -2362,5 +2344,77 @@
   "shellSupportUs": "Support Us",
   "@shellSupportUs": {
     "description": "Desktop sidebar action that opens the AOSSIE support panel."
+  },
+  "profileMembersLoadFailed": "Couldn't load team members",
+  "@profileMembersLoadFailed": {
+    "description": "Team members screen error state when the members request fails."
+  },
+  "profileMembersLoadFailedHint": "Check your connection and try again.",
+  "@profileMembersLoadFailedHint": {
+    "description": "Hint under the team members load error."
+  },
+  "profileRetry": "Retry",
+  "@profileRetry": {
+    "description": "Button that reloads the team members after a failure."
+  },
+  "meetingBotCalled": "Bot called",
+  "@meetingBotCalled": {
+    "description": "Snackbar after the transcription bot is dispatched to a meeting."
+  },
+  "meetingCallBotFailed": "Couldn't call the bot. Please try again.",
+  "@meetingCallBotFailed": {
+    "description": "Snackbar when dispatching the transcription bot fails."
+  },
+  "meetingCallBot": "Call Bot",
+  "@meetingCallBot": {
+    "description": "Button that sends the transcription bot to the meeting."
+  },
+  "meetingCallingBot": "Calling bot…",
+  "@meetingCallingBot": {
+    "description": "Call Bot button label while the request is running."
+  },
+  "meetingSummaryReady": "Summary ready",
+  "@meetingSummaryReady": {
+    "description": "Snackbar after the meeting transcript was summarized."
+  },
+  "chatReplyError": "Sorry, I encountered an error. Please try again later.",
+  "@chatReplyError": {
+    "description": "Chat reply shown when sending a message fails."
+  },
+  "chatRequestError": "Sorry, I encountered an error while processing your request.",
+  "@chatRequestError": {
+    "description": "Chat reply shown when Ell-ena could not answer or could not complete a requested action."
+  },
+  "chatRequestDone": "Done! Your request has been completed.",
+  "@chatRequestDone": {
+    "description": "Chat reply confirming a completed action when no AI summary is available."
+  },
+  "meetingFetchSummaryFailed": "Couldn't fetch the summary. The transcript may not be ready yet, so try again later.",
+  "@meetingFetchSummaryFailed": {
+    "description": "Snackbar when fetching or summarizing the meeting transcript fails."
+  },
+  "meetingFetchSummary": "Fetch Summary",
+  "@meetingFetchSummary": {
+    "description": "Button that fetches and summarizes the meeting transcript."
+  },
+  "meetingFetchingSummary": "Fetching summary…",
+  "@meetingFetchingSummary": {
+    "description": "Fetch Summary button label while the request is running."
+  },
+  "ticketGithubSyncPending": "GitHub sync in progress",
+  "@ticketGithubSyncPending": {
+    "description": "Ticket GitHub sync status chip while the sync is running."
+  },
+  "ticketGithubSynced": "Synced to GitHub",
+  "@ticketGithubSynced": {
+    "description": "Ticket GitHub sync status chip after a successful sync."
+  },
+  "ticketGithubNotSynced": "Not synced to GitHub",
+  "@ticketGithubNotSynced": {
+    "description": "Ticket GitHub sync status chip when no sync was requested."
+  },
+  "ticketGithubSyncStatusFailed": "GitHub sync failed",
+  "@ticketGithubSyncStatusFailed": {
+    "description": "Ticket GitHub sync status chip after a failed sync."
   }
 }

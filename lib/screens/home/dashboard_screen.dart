@@ -9,6 +9,7 @@ import '../../widgets/custom_widgets.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/meeting_status.dart';
 import '../tasks/task_detail_screen.dart';
 import '../tickets/ticket_detail_screen.dart';
 import '../meetings/meeting_detail_screen.dart';
@@ -184,25 +185,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           tickets.where((t) => t['status'] == 'in_progress').length;
       _ticketsResolved = tickets.where((t) => t['status'] == 'resolved').length;
 
-      // Upcoming meetings (next 14 days)
-      final upcoming = <Map<String, dynamic>>[];
-      for (final m in meetings) {
-        final md = DateTime.tryParse(m['meeting_date']?.toString() ?? '');
-        if (md != null &&
-            md.isAfter(now.subtract(const Duration(days: 1))) &&
-            md.isBefore(now.add(const Duration(days: 14)))) {
-          upcoming.add(m);
-        }
-      }
-      upcoming.sort((a, b) {
-        final ad =
-            DateTime.tryParse(a['meeting_date']?.toString() ?? '') ?? now;
-        final bd =
-            DateTime.tryParse(b['meeting_date']?.toString() ?? '') ?? now;
-        return ad.compareTo(bd);
-      });
-      // legacy meetings list no longer used
-
       // Recent
       tasks.sort((a, b) => (DateTime.tryParse(
                   (b['updated_at'] ?? b['created_at'])?.toString() ?? '') ??
@@ -223,8 +205,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       final List<Map<String, dynamic>> items = [];
       for (final m in meetings) {
         final dt = DateTime.tryParse(m['meeting_date']?.toString() ?? '');
+        // Skip meetings that have already ended
         if (dt != null &&
-            dt.isAfter(now.subtract(const Duration(days: 1))) &&
+            !isPastMeeting(m, now) &&
             dt.isBefore(now.add(const Duration(days: 14)))) {
           items.add({
             'type': 'meeting',
@@ -646,34 +629,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       .textTheme
                       .titleLarge
                       ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade400.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.trending_up,
-                      color: Colors.green.shade400,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '+15%',
-                      style: TextStyle(
-                        color: Colors.green.shade400,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ],

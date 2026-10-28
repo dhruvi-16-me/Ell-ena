@@ -862,11 +862,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not navigate to the item. Details missing.';
 
   @override
-  String chatNavigationError(String error) {
-    return 'Navigation error: $error';
-  }
-
-  @override
   String get chatSpeechNotAvailable =>
       'Speech recognition not available on this device';
 
@@ -1093,11 +1088,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileStandardAccess => 'Standard team member access';
-
-  @override
-  String profileErrorLoadingMembers(String error) {
-    return 'Error loading team members: $error';
-  }
 
   @override
   String profileTeamMembersTitle(String teamName) {
@@ -1705,4 +1695,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shellSupportUs => 'Support Us';
+
+  @override
+  String get profileMembersLoadFailed => 'Couldn\'t load team members';
+
+  @override
+  String get profileMembersLoadFailedHint =>
+      'Check your connection and try again.';
+
+  @override
+  String get profileRetry => 'Retry';
+
+  @override
+  String get meetingBotCalled => 'Bot called';
+
+  @override
+  String get meetingCallBotFailed =>
+      'Couldn\'t call the bot. Please try again.';
+
+  @override
+  String get meetingCallBot => 'Call Bot';
+
+  @override
+  String get meetingCallingBot => 'Calling bot…';
+
+  @override
+  String get meetingSummaryReady => 'Summary ready';
+
+  @override
+  String get chatReplyError =>
+      'Sorry, I encountered an error. Please try again later.';
+
+  @override
+  String get chatRequestError =>
+      'Sorry, I encountered an error while processing your request.';
+
+  @override
+  String get chatRequestDone => 'Done! Your request has been completed.';
+
+  @override
+  String get meetingFetchSummaryFailed =>
+      'Couldn\'t fetch the summary. The transcript may not be ready yet, so try again later.';
+
+  @override
+  String get meetingFetchSummary => 'Fetch Summary';
+
+  @override
+  String get meetingFetchingSummary => 'Fetching summary…';
+
+  @override
+  String get ticketGithubSyncPending => 'GitHub sync in progress';
+
+  @override
+  String get ticketGithubSynced => 'Synced to GitHub';
+
+  @override
+  String get ticketGithubNotSynced => 'Not synced to GitHub';
+
+  @override
+  String get ticketGithubSyncStatusFailed => 'GitHub sync failed';
 }
