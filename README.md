@@ -4,6 +4,11 @@
   <img src="ELL-ena-logo/svg/ellena_logo.svg" alt="Ell-ena logo" width="220"/>
 </p>
 
+<p align="center">
+  <a href="https://scorecard.dev/viewer/?uri=github.com/AOSSIE-Org/Ell-ena">
+    <img src="https://api.scorecard.dev/projects/github.com/AOSSIE-Org/Ell-ena/badge" alt="OpenSSF Scorecard"/></a>
+</p>
+
 **Ell-ena** is your AI-powered teammate that makes managing work effortless. From automatically creating tickets to capturing every detail in meeting transcriptions, Ell-ena keeps the full context of your projects at its fingertips—so nothing ever falls through the cracks.  
 
 It’s like having a smart, proactive teammate who anticipates what you need, organizes your workflow, and helps you stay on top of everything… without you even asking.
